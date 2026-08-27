@@ -56,9 +56,11 @@ const AllIssues = () => {
         <Filter size={20} color="var(--text-muted)" />
         <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)} style={{ padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
           <option value="">All Categories</option>
-          <option value="road_damage">Road Damage</option>
-          <option value="garbage">Garbage</option>
-          <option value="water_leakage">Water Leakage</option>
+          <option value="roads">Roads & Transport</option>
+          <option value="sanitation">Sanitation</option>
+          <option value="water">Water Supply</option>
+          <option value="drainage">Drainage</option>
+          <option value="electrical">Electrical / Streetlights</option>
         </select>
         <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)} style={{ padding: '0.5rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}>
           <option value="">All Statuses</option>

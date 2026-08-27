@@ -149,7 +149,7 @@ service cloud.firestore {
     // ─── Civic Memory ─────────────────────────────────────────────────────
     match /civicMemory/{memId} {
       allow read: if isAuthenticated();
-      allow create, update: if isAdmin();
+      allow create, update: if isAuthenticated();
       allow delete: if false;
     }
   }

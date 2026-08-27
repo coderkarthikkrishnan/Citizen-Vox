@@ -28,7 +28,7 @@ export const LocationPicker = ({ location, setLocation }) => {
   const { location: geoLoc, error: geoErr, loading: geoLoad, requestLocation } = useGeolocation();
   const mapRef = useRef(null);
 
-  const defaultCenter = { lat: 37.7749, lng: -122.4194 }; // Default fallback
+  const defaultCenter = { lat: 11.1271, lng: 78.6569 }; // Tamil Nadu, India fallback
 
   useEffect(() => {
     if (geoLoc && !location) {

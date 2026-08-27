@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { MapPin, ArrowRight, ShieldCheck, FileText, Activity, Star } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { MapPin, ArrowRight, ShieldCheck, FileText, Activity, Star, LogOut } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { useLanguage } from '../../hooks/useLanguage';
@@ -9,7 +9,8 @@ import IssueCard from '../../components/citizen/IssueCard';
 import Button from '../../components/common/Button';
 
 const CitizenDashboard = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const { t } = useLanguage();
   const [myIssues, setMyIssues] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,11 @@ const CitizenDashboard = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/login');
   };
 
   const getGreetingKey = () => {
@@ -55,6 +61,13 @@ const CitizenDashboard = () => {
         {/* Decorative background shapes */}
         <div style={{ position: 'absolute', top: '-20px', right: '-20px', width: '150px', height: '150px', borderRadius: '50%', background: 'rgba(143,234,99,0.1)', filter: 'blur(30px)' }}></div>
         
+        <button 
+          onClick={handleLogout}
+          style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', background: 'rgba(255,85,85,0.1)', color: 'var(--danger-light)', border: '1px solid rgba(255,85,85,0.2)', padding: '0.5rem 1rem', borderRadius: 'var(--radius-md)', cursor: 'pointer', fontWeight: 600, fontSize: '0.875rem', zIndex: 10 }}
+        >
+          <LogOut size={16} /> Log Out
+        </button>
+
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}>
           <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.7)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '8px' }}>{t(getGreetingKey())}</p>
           <h1 className="text-h2" style={{ marginBottom: '16px', fontSize: '2rem' }}>{user?.displayName || 'Citizen'} 👋</h1>

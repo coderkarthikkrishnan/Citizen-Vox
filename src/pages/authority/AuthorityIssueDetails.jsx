@@ -63,12 +63,12 @@ const AuthorityIssueDetails = () => {
                 <span className="text-small text-muted" style={{ textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                   {issue.category?.replace('_', ' ')} • {issue.assignedDepartment || 'Unassigned'}
                 </span>
-                <h1 className="text-h1" style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>{issue.title}</h1>
+                <h1 className="text-h1" style={{ marginTop: '0.25rem', marginBottom: '0.5rem' }}>{issue.title || issue.primaryIssue || 'Untitled Issue'}</h1>
               </div>
               <IssueStatus status={issue.currentStatus || issue.status} />
             </div>
             <p className="text-body" style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap' }}>
-              {issue.description}
+              {issue.description || 'No description provided.'}
             </p>
           </div>
 

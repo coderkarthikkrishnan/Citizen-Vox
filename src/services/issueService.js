@@ -27,6 +27,7 @@ export const issueService = {
 
     const issuesRef = collection(db, 'issues');
     
+    // Preliminary issue structure
     const newIssue = {
       title: issueData.title || '',
       description: issueData.description,
@@ -48,18 +49,40 @@ export const issueService = {
       language: issueData.language || 'en-IN'
     };
 
-    const docRef = await addDoc(issuesRef, newIssue);
-    
-    // Auto-cluster for Civic Memory
+    let docRef;
     try {
-      await clusterService.joinCluster(docRef.id, newIssue);
+      docRef = await addDoc(issuesRef, newIssue);
+    } catch (err) {
+      console.error("Error saving initial issue:", err);
+      throw err;
+    }
+    
+    // 1. AI Understanding
+    try {
+      const { aiService } = await import('./aiService'); // lazy load to avoid circular deps if any
+      const aiAnalysis = await aiService.analyzeIssue(docRef.id, newIssue);
+      
+      // Update with AI insights
+      await updateDoc(docRef, { 
+        aiAnalysis: aiAnalysis,
+        category: aiAnalysis.category || newIssue.category,
+        title: aiAnalysis.summary || newIssue.title
+      });
+      newIssue.aiAnalysis = aiAnalysis;
+      newIssue.category = aiAnalysis.category || newIssue.category;
+    } catch (err) {
+      console.error("AI Understanding failed during issue creation:", err);
+    }
+
+    // 2. Auto-cluster & Duplicate Detection
+    try {
+      await clusterService.processClustering(docRef.id, newIssue);
     } catch (err) {
       console.error("Clustering failed during issue creation:", err);
     }
     
-    // Award 50 XP for reporting an issue
+    // 3. Award XP
     await gamificationService.addXp(userId, 50);
-    // Award the First Reporter badge (we will assume this is 1)
     await gamificationService.awardBadge(userId, 1);
     
     return docRef.id;

@@ -185,7 +185,7 @@ const ReportIssue = () => {
       } else if (locationMode === 'manual' && formData.manualAddress) {
         finalLocation = { lat: null, lng: null, address: formData.manualAddress };
       } else {
-        finalLocation = { lat: 20.5937, lng: 78.9629, address: 'Unknown Location' };
+        finalLocation = { lat: 11.1271, lng: 78.6569, address: 'Unknown Location' };
       }
 
       await issueService.createIssue({

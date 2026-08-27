@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
-import { authorityService } from '../../services/authorityService';
+import { resolutionDurabilityService } from '../../services/resolutionDurabilityService';
 import { CheckCircle, ShieldAlert, BarChart2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const ResolutionPerformance = () => {
   const { user } = useAuth();
-  const [metrics, setMetrics] = useState({ total: 0, resolved: 0, reopened: 0, durability: 0 });
+  const [metrics, setMetrics] = useState({ total: 0, resolved: 0, reopened: 0, durability: 0, approvalRate: 0, avgResolutionTime: 0 });
   const [problemIssues, setProblemIssues] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -14,28 +14,17 @@ const ResolutionPerformance = () => {
     const fetchPerformance = async () => {
       setLoading(true);
       try {
-        const issues = await authorityService.getAllIssues(user);
+        const result = await resolutionDurabilityService.getDurabilityMetrics(user);
         
-        let total = 0;
-        let resolved = 0;
-        let reopened = 0;
-        const problems = [];
-
-        issues.forEach(issue => {
-          total++;
-          if (issue.status === 'Resolved' || issue.status === 'closed') {
-            resolved++;
-          }
-          if (issue.reopenedCount > 0) {
-            reopened++;
-            problems.push(issue);
-          }
+        setMetrics({ 
+          total: result.total, 
+          resolved: result.resolved, 
+          reopened: result.reopened, 
+          durability: result.durability,
+          approvalRate: result.approvalRate || 0,
+          avgResolutionTime: result.avgResolutionTime || 0
         });
-
-        const durability = total > 0 ? Math.round(((total - reopened) / total) * 100) : 0;
-
-        setMetrics({ total, resolved, reopened, durability });
-        setProblemIssues(problems);
+        setProblemIssues(result.problemIssues);
       } catch (err) {
         console.error("Failed to load resolution performance:", err);
       } finally {
@@ -61,6 +50,14 @@ const ResolutionPerformance = () => {
         <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', textAlign: 'center' }}>
           <div className="text-h2" style={{ color: 'var(--primary-green)' }}>{metrics.durability}%</div>
           <p className="text-small text-muted text-uppercase" style={{ marginTop: '0.5rem' }}>Durability Score</p>
+        </div>
+        <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', textAlign: 'center' }}>
+          <div className="text-h2" style={{ color: 'var(--primary-green)' }}>{metrics.approvalRate}%</div>
+          <p className="text-small text-muted text-uppercase" style={{ marginTop: '0.5rem' }}>Citizen Approval Rate</p>
+        </div>
+        <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', textAlign: 'center' }}>
+          <div className="text-h2">{metrics.avgResolutionTime}h</div>
+          <p className="text-small text-muted text-uppercase" style={{ marginTop: '0.5rem' }}>Avg Resolution Time</p>
         </div>
         <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', textAlign: 'center' }}>
           <div className="text-h2">{metrics.resolved}</div>

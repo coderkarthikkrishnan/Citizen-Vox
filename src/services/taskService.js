@@ -29,7 +29,7 @@ export const taskService = {
   /**
    * Admin: Assigns an issue to a worker using a batched write
    */
-  assignTask: async (issueId, workerId, departmentId, municipalityId, assignedByUid, deadline = null) => {
+  assignTask: async (issueId, workerId, workerName, departmentId, municipalityId, assignedByUid, deadline = null) => {
     const { writeBatch } = await import('firebase/firestore');
     const batch = writeBatch(db);
 
@@ -53,7 +53,10 @@ export const taskService = {
       const issueRef = doc(db, 'issues', issueId);
       batch.update(issueRef, {
         assignedWorkerId: workerId,
+        assignedWorkerName: workerName,
+        assignedDepartment: departmentId,
         status: 'assigned',
+        currentStatus: 'Assigned',
         updatedAt: serverTimestamp()
       });
 

@@ -26,7 +26,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import AllIssues from './pages/admin/AllIssues';
 import PriorityQueue from './pages/authority/PriorityQueue';
 import AuthorityIssueDetails from './pages/authority/AuthorityIssueDetails';
-import MunicipalMap from './pages/authority/MunicipalMap';
+import AuthorityMap from './pages/authority/AuthorityMap';
 import Workers from './pages/department/Workers';
 import Departments from './pages/admin/Departments';
 import Escalations from './pages/authority/Escalations';
@@ -36,10 +36,10 @@ import AdminIntegrity from './pages/admin/AdminIntegrity';
 import CivicCopilot from './pages/authority/CivicCopilot';
 import AuditLogs from './pages/admin/AuditLogs';
 
-// Worker Pages
 import WorkerDashboard from './pages/worker/WorkerDashboard';
 import WorkerTasks from './pages/worker/WorkerTasks';
 import WorkerTaskDetails from './pages/worker/WorkerTaskDetails';
+import WorkerMap from './pages/worker/WorkerMap';
 import WorkerHistory from './pages/worker/WorkerHistory';
 import WorkerProfile from './pages/worker/WorkerProfile';
 
@@ -73,7 +73,7 @@ function App() {
             <Route path="issues" element={<AllIssues />} />
             <Route path="issues/:id" element={<AuthorityIssueDetails />} />
             <Route path="priority" element={<PriorityQueue />} />
-            <Route path="map" element={<MunicipalMap />} />
+            <Route path="map" element={<AuthorityMap />} />
             <Route path="workers" element={<Workers />} />
             <Route path="departments" element={<Departments />} />
             <Route path="escalations" element={<Escalations />} />
@@ -92,6 +92,7 @@ function App() {
             <Route path="dashboard" element={<WorkerDashboard />} />
             <Route path="tasks" element={<WorkerTasks />} />
             <Route path="tasks/:id" element={<WorkerTaskDetails />} />
+            <Route path="map" element={<WorkerMap />} />
             <Route path="history" element={<WorkerHistory />} />
             <Route path="profile" element={<WorkerProfile />} />
           </Route>

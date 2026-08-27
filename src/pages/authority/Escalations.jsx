@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { authorityService } from '../../services/authorityService';
 import { Link } from 'react-router-dom';
-import { AlertOctagon, Clock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { AlertOctagon, Clock, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
 
 const Escalations = () => {
   const { user } = useAuth();
@@ -29,10 +29,17 @@ const Escalations = () => {
           
           if (issue.createdAt) {
             const created = issue.createdAt.toDate ? issue.createdAt.toDate() : new Date(issue.createdAt);
-            const daysOld = (now - created) / (1000 * 60 * 60 * 24);
-            if (daysOld > 7) {
+            const hoursOld = (now - created) / (1000 * 60 * 60);
+            
+            let slaHours = 168; // Default 7 days
+            const cat = issue.category?.toLowerCase() || '';
+            if (cat.includes('water')) slaHours = 12;
+            else if (cat.includes('garbage') || cat.includes('sanitation')) slaHours = 24;
+            else if (cat.includes('road') || cat.includes('pothole')) slaHours = 72;
+
+            if (hoursOld > slaHours) {
               isEscalated = true;
-              reasons.push('Overdue (>7 Days)');
+              reasons.push(`Breached SLA (> ${slaHours}h)`);
             }
           }
           

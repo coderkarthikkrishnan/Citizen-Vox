@@ -4,16 +4,22 @@ import { useAuth } from '../../hooks/useAuth';
 import Button from '../common/Button';
 import IssueStatus from '../citizen/IssueStatus';
 
-const STATUSES = ['Submitted', 'Under Review', 'Assigned', 'In Progress', 'Resolved', 'Reopened'];
+const STATUSES = [
+  { value: 'reported', label: 'Reported' },
+  { value: 'assigned', label: 'Assigned' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'resolved', label: 'Resolved' },
+  { value: 'reopened', label: 'Reopened' }
+];
 
 const StatusControl = ({ issue, onUpdate }) => {
   const { user } = useAuth();
-  const [status, setStatus] = useState(issue?.currentStatus || issue?.status || 'Submitted');
+  const [status, setStatus] = useState(issue?.status || issue?.currentStatus || 'reported');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const currentStatus = issue?.currentStatus || issue?.status || 'Submitted';
+  const currentStatus = issue?.status || issue?.currentStatus || 'reported';
 
   const handleUpdate = async () => {
     if (status === currentStatus) return;
@@ -21,7 +27,7 @@ const StatusControl = ({ issue, onUpdate }) => {
     setLoading(true);
     setError('');
     try {
-      await workflowService.changeStatus(issue.id, currentStatus, status, user.uid, note, issue.isIndependent);
+      await workflowService.changeStatus(issue.id, currentStatus, status, user.uid, note, !issue.isCluster);
       setNote('');
       if (onUpdate) onUpdate();
     } catch (err) {
@@ -46,7 +52,7 @@ const StatusControl = ({ issue, onUpdate }) => {
           onChange={(e) => setStatus(e.target.value)}
           style={{ width: '100%', padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)' }}
         >
-          {STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
+          {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
         </select>
         
         {status !== currentStatus && (

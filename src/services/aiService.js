@@ -74,8 +74,38 @@ export const aiService = {
 
       return data.answer;
     } catch (error) {
-      console.error("Copilot Error:", error);
-      throw error;
+      console.warn("Cloudflare Worker failed. Falling back to direct Gemini API call...", error);
+      
+      // FALLBACK TO DIRECT REST API
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) {
+        throw new Error('Worker failed and VITE_GEMINI_API_KEY is missing for fallback.');
+      }
+
+      const systemPrompt = "You are CivicPulse AI Assistant. Help admins and citizens query ticket statuses, ward analytics, and civic issue resolution workflows.";
+      const prompt = `Context: ${JSON.stringify(contextData)}\n\nQuestion: ${question}`;
+      
+      const payload = {
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.2 }
+      };
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!res.ok) throw new Error('Direct Gemini API call failed.');
+        const geminiData = await res.json();
+        
+        return geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "I am currently unable to answer that question.";
+      } catch (fallbackError) {
+        console.error("Copilot Fallback Error:", fallbackError);
+        throw fallbackError;
+      }
     }
   }
 };

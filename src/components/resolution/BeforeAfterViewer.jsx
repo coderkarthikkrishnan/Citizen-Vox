@@ -41,7 +41,7 @@ const BeforeAfterViewer = ({ beforeEvidence, afterEvidence, workDescription }) =
       }}>
         {(view === 'split' || view === 'before') && beforeEvidence && (
           <div style={{ position: 'relative', width: '100%', height: view === 'split' ? '200px' : '300px' }}>
-            <img src={beforeEvidence.url} alt="Before" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={typeof beforeEvidence === 'string' ? beforeEvidence : beforeEvidence.url} alt="Before" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'rgba(0,0,0,0.6)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
               Before
             </div>
@@ -50,7 +50,7 @@ const BeforeAfterViewer = ({ beforeEvidence, afterEvidence, workDescription }) =
         
         {(view === 'split' || view === 'after') && afterEvidence && (
           <div style={{ position: 'relative', width: '100%', height: view === 'split' ? '200px' : '300px' }}>
-            <img src={afterEvidence.url} alt="After" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <img src={typeof afterEvidence === 'string' ? afterEvidence : afterEvidence.url} alt="After" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'var(--success)', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
               After
             </div>

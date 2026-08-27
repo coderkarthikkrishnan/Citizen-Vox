@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:worker": "cd cloudflare-worker && npx wrangler dev",
     "build": "vite build",
     "lint": "oxlint",
     "preview": "vite preview"

@@ -41,7 +41,7 @@ const AuthorityMap = () => {
   const [loading, setLoading] = useState(true);
 
   // Focus on a default city center, in a real app this would be dynamically set to the authority's jurisdiction
-  const center = { lat: 40.7128, lng: -74.0060 }; // Placeholder New York
+  const center = { lat: 11.1271, lng: 78.6569 }; // Tamil Nadu, India
 
   useEffect(() => {
     const fetchMapData = async () => {

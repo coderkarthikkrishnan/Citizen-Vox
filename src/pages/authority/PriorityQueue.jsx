@@ -8,6 +8,9 @@ const PriorityQueue = () => {
   const { user } = useAuth();
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('All');
+  
+  const TABS = ['All', 'Critical', 'High', 'Medium', 'Low'];
 
   useEffect(() => {
     const fetchQueue = async () => {
@@ -41,7 +44,28 @@ const PriorityQueue = () => {
         <p className="text-muted">Issues ranked by the CivicPulse Priority Engine.</p>
       </header>
 
-      {issues.length === 0 ? (
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>
+        {TABS.map(tab => (
+          <button 
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            style={{
+              padding: '0.5rem 1rem',
+              borderRadius: 'var(--radius-full)',
+              border: '1px solid var(--border)',
+              background: activeTab === tab ? 'var(--text-primary)' : 'var(--surface)',
+              color: activeTab === tab ? 'white' : 'var(--text-primary)',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+
+      {issues.filter(issue => activeTab === 'All' || issue.priority?.level === activeTab || issue.severity === activeTab).length === 0 ? (
         <div style={{ padding: '4rem 2rem', textAlign: 'center', background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
           <AlertCircle size={48} color="var(--text-muted)" style={{ margin: '0 auto 1rem' }} />
           <h3 className="text-h3">No civic issues found.</h3>
@@ -49,7 +73,7 @@ const PriorityQueue = () => {
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {issues.map((issue) => (
+          {issues.filter(issue => activeTab === 'All' || issue.priority?.level === activeTab || issue.severity === activeTab).map((issue) => (
             <div key={issue.id} style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '2rem' }}>
               
               <div style={{ flex: 1 }}>

@@ -62,31 +62,69 @@ const Workers = () => {
           <p className="text-muted">No workers found.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: '1rem' }}>
-          {workers.map(w => (
-            <div key={w.id} style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 className="text-h3" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  {w.name} 
-                  {w.status === 'inactive' && <span style={{ fontSize: '0.75rem', background: 'var(--danger)', color: 'white', padding: '2px 8px', borderRadius: '12px' }}>Inactive</span>}
-                </h3>
-                <p className="text-small text-muted">{w.email} • {w.departmentId || 'No Department'}</p>
-                <div style={{ display: 'flex', gap: '1.5rem', marginTop: '0.75rem' }}>
-                  <span style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><Clock size={16} /> Active Tasks: {w.activeTasks}</span>
-                  <span style={{ fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.25rem' }}><CheckCircle size={16} color="var(--success)" /> Completed: {w.completedTasks}</span>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '1.5rem' }}>
+          {workers.map((w, index) => (
+            <motion.div 
+              key={w.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ y: -5, boxShadow: '0 10px 30px rgba(0, 255, 157, 0.1)' }}
+              style={{ 
+                background: 'linear-gradient(145deg, var(--surface) 0%, rgba(20,20,20,0.6) 100%)',
+                padding: '1.5rem', 
+                borderRadius: 'var(--radius-lg)', 
+                border: '1px solid rgba(255,255,255,0.1)',
+                display: 'flex', 
+                flexDirection: 'column',
+                gap: '1.5rem',
+                backdropFilter: 'blur(10px)',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary-green)', color: 'var(--near-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
+                    {w.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h3 className="text-h3" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                      {w.name}
+                    </h3>
+                    <p className="text-small text-muted">{w.email}</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => { setEditingWorker(w); setIsModalOpen(true); }} style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-primary)', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
+                    <Edit2 size={16} />
+                  </button>
+                  {w.status !== 'inactive' && (
+                    <button onClick={() => handleDeactivate(w)} style={{ padding: '0.5rem', background: 'rgba(255,85,85,0.1)', color: 'var(--danger)', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,85,85,0.2)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,85,85,0.1)'}>
+                      <UserX size={16} />
+                    </button>
+                  )}
                 </div>
               </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button onClick={() => { setEditingWorker(w); setIsModalOpen(true); }} style={{ padding: '0.5rem', background: 'transparent', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
-                  <Edit2 size={18} />
-                </button>
-                {w.status !== 'inactive' && (
-                  <button onClick={() => handleDeactivate(w)} style={{ padding: '0.5rem', background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
-                    <UserX size={18} />
-                  </button>
-                )}
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{w.activeTasks}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Tasks</span>
+                </div>
+                <div style={{ width: '1px', height: '30px', background: 'var(--border)' }}></div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success)' }}>{w.completedTasks}</span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Completed</span>
+                </div>
+                <div style={{ width: '1px', height: '30px', background: 'var(--border)' }}></div>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  <span style={{ fontSize: '0.875rem', fontWeight: 'bold', color: w.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)' }}>
+                    {w.status === 'inactive' ? 'INACTIVE' : 'ACTIVE'}
+                  </span>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</span>
+                </div>
               </div>
-            </div>
+            </motion.div>
           ))}
         </div>
       )}
@@ -130,7 +168,13 @@ const WorkerModal = ({ worker, onClose, onSuccess, adminUser }) => {
         setGeneratedPassword(result.tempPassword);
       }
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'auth/email-already-in-use' || err.message.includes('email-already-in-use')) {
+        setError("This email address is already registered to another user. Please use a different email.");
+      } else if (err.code === 'auth/invalid-email' || err.message.includes('invalid-email')) {
+        setError("The email address is invalid.");
+      } else {
+        setError(err.message || "An error occurred while saving the worker.");
+      }
     } finally {
       setLoading(false);
     }

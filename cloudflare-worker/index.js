@@ -95,13 +95,17 @@ IMPORTANT RULES:
 - If image evidence is unclear, lower your confidence.
 - Identify if the description conflicts with the user-selected category.
 - Output strictly in JSON format.
-- Output MUST use these exact keys: "category", "severity", "recommendedDepartment", "summary", "reasoning", "confidence".
+- Output MUST use these exact keys: "category", "issueType", "severity", "recommendedDepartment", "summary", "reasoning", "confidence", "language", "extractedLocation", "impact".
 - "category" must be one of: "pothole", "road_damage", "garbage", "water_leakage", "drainage", "streetlight", "fallen_tree", "public_safety", "other".
+- "issueType" is a slightly more descriptive label than category (e.g. "Deep Pothole", "Broken Water Main").
 - "severity" must be one of: "critical", "high", "medium", "low".
 - "recommendedDepartment" must be one of: "roads", "sanitation", "water", "drainage", "electrical", "environment", "public_safety", "general".
 - "confidence" must be a float between 0.0 and 1.0.
 - "summary" must be 1-2 concise sentences.
 - "reasoning" must be an array of short strings (bullet points) explaining the severity and category.
+- "language" should be the detected language code (e.g. "en", "es").
+- "extractedLocation" should be any location entities mentioned in the text, or null.
+- "impact" should be a 1-sentence description of the potential community impact.
 `;
 
   let userPrompt = `User Selected Category: ${category}\nDescription: ${description}\n`;
@@ -116,7 +120,7 @@ IMPORTANT RULES:
     generationConfig: { response_mime_type: "application/json" }
   };
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
   
   const response = await fetch(geminiUrl, {
     method: "POST",
@@ -142,13 +146,17 @@ IMPORTANT RULES:
 
   const normalizedResult = {
     category: aiResult.category || "other",
+    issueType: aiResult.issueType || "Unknown Issue",
     severity: aiResult.severity || "low",
     recommendedDepartment: aiResult.recommendedDepartment || "general",
     summary: aiResult.summary || "AI analysis completed.",
     reasoning: Array.isArray(aiResult.reasoning) ? aiResult.reasoning : ["Analysis based on user report."],
     confidence: typeof aiResult.confidence === 'number' ? aiResult.confidence : 0.5,
+    language: aiResult.language || "unknown",
+    extractedLocation: aiResult.extractedLocation || null,
+    impact: aiResult.impact || "Unknown impact.",
     analyzedAt: new Date().toISOString(),
-    model: "gemini-2.5-flash"
+    model: "gemini-1.5-flash"
   };
 
   return new Response(JSON.stringify({ success: true, aiAnalysis: normalizedResult }), {
@@ -195,7 +203,7 @@ RULES:
     generationConfig: { response_mime_type: "application/json" }
   };
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
   
   const response = await fetch(geminiUrl, {
     method: "POST",
@@ -253,7 +261,7 @@ IMPORTANT RULES:
     generationConfig: { response_mime_type: "application/json" }
   };
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
   
   const response = await fetch(geminiUrl, {
     method: "POST",
@@ -288,7 +296,7 @@ async function handleCopilot(request, env) {
 
   if (!question || !contextData) {
     return new Response(JSON.stringify({ error: "Missing question or contextData" }), { 
-      status: 400, headers: { "Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json' } 
+      status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
     });
   }
 
@@ -309,7 +317,7 @@ IMPORTANT RULES:
     contents: [{ role: "user", parts: [{ text: systemPrompt }, { text: userPrompt }] }]
   };
 
-  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+  const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
   
   const response = await fetch(geminiUrl, {
     method: "POST",
@@ -325,7 +333,7 @@ IMPORTANT RULES:
   const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || "I was unable to process the data.";
 
   return new Response(JSON.stringify({ success: true, answer }), {
-    headers: { "Access-Control-Allow-Origin": "*", 'Content-Type': 'application/json' }
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
   });
 }
 

@@ -1,18 +1,70 @@
 import { db } from '../firebase/config';
-import { collection, doc, addDoc, updateDoc, increment, getDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, doc, addDoc, updateDoc, increment, getDoc, serverTimestamp, query, where, getDocs } from 'firebase/firestore';
+import { aiService } from './aiService';
+import { civicMemoryService } from './civicMemoryService';
 
 export const clusterService = {
   /**
-   * Add a newly submitted report to an existing cluster or create a new cluster 
-   * grouping both the candidate report and the new report.
+   * Process a newly submitted report to see if it belongs to a cluster or triggers civic memory.
    */
+  processClustering: async (newReportId, newReportData) => {
+    try {
+      if (!newReportData.latitude || !newReportData.longitude) return null;
+
+      // Dynamically import issueService to avoid circular dependency
+      const { issueService } = await import('./issueService');
+
+      // 1. Fetch nearby issues as candidates (simplified bounding box or just recent for MVP)
+      const nearbyIssues = await issueService.getNearbyIssues();
+      const radiusKm = 0.05; // 50 meters
+      
+      const candidates = nearbyIssues
+        .filter(issue => issue.id !== newReportId)
+        .filter(issue => issue.category === newReportData.category)
+        .map(issue => ({
+          ...issue,
+          distanceStr: `${(issueService.calculateDistance(newReportData.latitude, newReportData.longitude, issue.latitude, issue.longitude) * 1000).toFixed(1)}m`
+        }))
+        .filter(issue => issueService.calculateDistance(newReportData.latitude, newReportData.longitude, issue.latitude, issue.longitude) <= radiusKm);
+
+      if (candidates.length === 0) return null; // New occurrence
+
+      // 2. Ask AI to check for semantic duplicates
+      const result = await aiService.checkDuplicates(
+        { id: newReportId, ...newReportData }, 
+        candidates
+      );
+
+      if (!result.potentialMatch || !result.matchedCandidateId) {
+        return null; // AI determined it's not the same problem
+      }
+
+      const matchedIssue = candidates.find(c => c.id === result.matchedCandidateId);
+      if (!matchedIssue) return null;
+
+      // 3. Distinguish between Duplicate (active) and Recurrence (resolved)
+      const isActive = !['closed', 'Resolved'].includes(matchedIssue.status);
+
+      if (isActive) {
+        // DUPLICATE -> Join Cluster
+        return await clusterService.joinCluster(newReportId, newReportData, matchedIssue.id, matchedIssue.issueClusterId);
+      } else {
+        // RECURRENCE -> Record in Civic Memory
+        await civicMemoryService.recordRecurrence(matchedIssue.id, newReportId, matchedIssue.issueClusterId, newReportData);
+        return null; // It's tracked in memory, but stands alone as a new active issue ticket
+      }
+
+    } catch (error) {
+      console.error("Clustering Process Error:", error);
+      return null;
+    }
+  },
+
   joinCluster: async (newReportId, newReportData, candidateId, candidateClusterId = null) => {
     try {
       let finalClusterId = candidateClusterId;
 
-      // If the candidate doesn't belong to a cluster yet, create one
       if (!finalClusterId) {
-        // Fetch candidate data to seed the cluster
         const candidateRef = doc(db, 'issues', candidateId);
         const candidateSnap = await getDoc(candidateRef);
         
@@ -23,10 +75,10 @@ export const clusterService = {
           title: candidateData.title || newReportData.title,
           category: candidateData.category || newReportData.category,
           severity: candidateData.aiAnalysis?.severity || newReportData.aiAnalysis?.severity || 'medium',
-          latitude: candidateData.location?.lat,
-          longitude: candidateData.location?.lng,
+          latitude: candidateData.latitude,
+          longitude: candidateData.longitude,
           status: candidateData.status || 'under_review',
-          reportCount: 2, // Candidate + new report
+          reportCount: 2,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
           lastReportedAt: serverTimestamp(),
@@ -34,11 +86,8 @@ export const clusterService = {
         });
 
         finalClusterId = newClusterRef.id;
-
-        // Update the candidate to point to this new cluster
         await updateDoc(candidateRef, { issueClusterId: finalClusterId });
       } else {
-        // Increment report count on existing cluster
         const clusterRef = doc(db, 'issueClusters', finalClusterId);
         await updateDoc(clusterRef, {
           reportCount: increment(1),
@@ -47,7 +96,6 @@ export const clusterService = {
         });
       }
 
-      // Update the newly submitted report to point to the cluster
       const newReportRef = doc(db, 'issues', newReportId);
       await updateDoc(newReportRef, { issueClusterId: finalClusterId });
 
@@ -59,13 +107,7 @@ export const clusterService = {
     }
   },
 
-  /**
-   * Explicitly sets a report as a standalone cluster (if needed)
-   * or simply ensures it's unclustered.
-   */
   keepIndependent: async (newReportId) => {
-    // In our data model, an issue without an `issueClusterId` is implicitly independent.
-    // We could create a cluster of 1, but for simplicity, leaving issueClusterId null works well.
     return null;
   }
 };

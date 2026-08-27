@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../../hooks/useAuth';
 import { aiService } from '../../services/aiService';
+import { copilotService } from '../../services/copilotService';
 import { db } from '../../firebase/config';
 import { collection, query, where, getDocs, limit, orderBy } from 'firebase/firestore';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
@@ -11,55 +12,17 @@ const CivicCopilot = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [contextData, setContextData] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // Fetch real contextual data to feed the copilot based on role
+  // Check role authorization on mount
   useEffect(() => {
-    const fetchContext = async () => {
-      try {
-        let q = collection(db, 'issueClusters');
-        let queryConstraints = [orderBy('createdAt', 'desc'), limit(50)];
-
-        if (user?.role !== 'admin') {
-          return; // Ensure no unauthorized data fetch
-        }
-
-        if (user?.municipalityId) {
-          queryConstraints.push(where('municipalityId', '==', user.municipalityId));
-        }
-        if (user?.departmentId) {
-          queryConstraints.push(where('departmentId', '==', user.departmentId));
-        }
-
-        const snapshot = await getDocs(query(q, ...queryConstraints));
-        const issues = [];
-        snapshot.forEach(doc => issues.push({ id: doc.id, ...doc.data() }));
-
-        // Minimal representation of issues for the prompt context to fit in token limits
-        const compressedContext = issues.map(i => ({
-          title: i.title,
-          status: i.currentStatus,
-          priority: i.priority?.level,
-          department: i.assignedDepartment || 'unassigned',
-          reports: i.reportCount,
-          daysOpen: Math.floor((new Date() - new Date(i.createdAt?.toDate?.() || i.createdAt)) / (1000 * 60 * 60 * 24))
-        }));
-
-        setContextData({ recentIssues: compressedContext });
-        setMessages([{ 
-          role: 'assistant', 
-          content: `Hello ${user?.displayName || 'Admin'}. I am Civic Copilot. I have loaded context from ${issues.length} recent issues in your ${user?.role.replace('_', ' ')}. How can I help you?` 
-        }]);
-
-      } catch (err) {
-        console.error("Failed to load context for copilot:", err);
-        setMessages([{ role: 'assistant', content: 'I encountered an error loading your civic data. Please try again later.' }]);
-      }
-    };
-
-    if (user) {
-      fetchContext();
+    if (user && user.role !== 'admin') {
+      setMessages([{ role: 'assistant', content: 'Unauthorized: Civic Copilot is restricted to administrative personnel.' }]);
+    } else if (user) {
+      setMessages([{ 
+        role: 'assistant', 
+        content: `Hello ${user?.displayName || 'Admin'}. I am Civic Copilot. I can analyze recent reports, priorities, and durability metrics. How can I help you?` 
+      }]);
     }
   }, [user]);
 
@@ -77,11 +40,11 @@ const CivicCopilot = () => {
     setIsLoading(true);
 
     try {
-      if (!contextData) {
-        throw new Error("No civic context available.");
-      }
+      if (user?.role !== 'admin') throw new Error("Unauthorized.");
+
+      const dynamicContext = await copilotService.getContextForQuestion(userMessage, user);
       
-      const answer = await aiService.askCopilot(userMessage, contextData, user?.role);
+      const answer = await aiService.askCopilot(userMessage, dynamicContext, user?.role);
       setMessages(prev => [...prev, { role: 'assistant', content: answer }]);
     } catch (err) {
       console.error(err);
@@ -148,13 +111,13 @@ const CivicCopilot = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about recurring problems, critical issues, or priorities..."
-              disabled={isLoading || !contextData}
+              disabled={isLoading}
               style={{ flex: 1, padding: '1rem 1.5rem', borderRadius: 'var(--radius-full)', border: '1px solid var(--border)', background: 'var(--bg-main)', color: 'var(--text-primary)', outline: 'none' }}
             />
             <button 
               type="submit"
-              disabled={isLoading || !input.trim() || !contextData}
-              style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--text-primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (isLoading || !input.trim() || !contextData) ? 'not-allowed' : 'pointer' }}
+              disabled={isLoading || !input.trim()}
+              style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--text-primary)', color: 'white', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: (isLoading || !input.trim()) ? 'not-allowed' : 'pointer' }}
             >
               <Send size={20} style={{ transform: 'translateX(2px)' }} />
             </button>

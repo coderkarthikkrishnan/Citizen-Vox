@@ -52,6 +52,7 @@ export const workflowService = {
       
       // 1. Update document
       await updateDoc(docRef, {
+        status: newStatus,
         currentStatus: newStatus,
         updatedAt: serverTimestamp()
       });
@@ -73,7 +74,7 @@ export const workflowService = {
     try {
       await addDoc(collection(db, 'statusHistory'), {
         clusterId,
-        fromStatus: fromStatus || 'Submitted',
+        fromStatus: fromStatus || 'reported',
         toStatus,
         changedBy,
         changedAt: serverTimestamp(),
