@@ -13,7 +13,7 @@ const PublicLayout = () => {
               <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
             </svg>
           </div>
-          <span className="logo-text">CivicPulse</span>
+          <span className="logo-text">Citizen Vox</span>
         </Link>
         
         <nav style={{ display: 'flex', gap: '2rem', alignItems: 'center' }} className="hide-mobile">
@@ -45,7 +45,7 @@ const PublicLayout = () => {
                   <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
                 </svg>
               </div>
-              <span className="logo-text" style={{ fontSize: '1rem' }}>CivicPulse</span>
+              <span className="logo-text" style={{ fontSize: '1rem' }}>Citizen Vox</span>
             </div>
             <p className="text-small text-muted" style={{ color: 'var(--text-secondary)' }}>A smarter way to build cleaner, safer and better cities together.</p>
           </div>

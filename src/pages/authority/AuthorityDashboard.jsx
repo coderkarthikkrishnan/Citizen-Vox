@@ -80,7 +80,7 @@ const AuthorityDashboard = () => {
       
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1 className="text-h2" style={{ marginBottom: '8px' }}>CivicPulse in Action</h1>
+          <h1 className="text-h2" style={{ marginBottom: '8px' }}>Citizen Vox in Action</h1>
           <p className="text-body text-muted">From reporting to resolution — a transparent and accountable civic ecosystem.</p>
         </div>
       </div>

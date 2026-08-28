@@ -80,66 +80,62 @@ const Login = () => {
     }
   };
 
-  const seedDemoAccounts = async () => {
-    if (!auth) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const demoAccounts = [
-        { email: 'admin@citizenvox.gov', pass: 'Admin123!', role: 'admin', name: 'System Admin', dept: null },
-        { email: 'worker1@citizenvox.gov', pass: 'Worker123!', role: 'worker', name: 'Field Worker', dept: 'Roads' },
-        { email: 'citizen@citizenvox.gov', pass: 'Citizen123!', role: 'citizen', name: 'Citizen Demo', dept: null }
-      ];
-
-      for (const acc of demoAccounts) {
-        try {
-          const cred = await createUserWithEmailAndPassword(auth, acc.email, acc.pass);
-          await updateProfile(cred.user, { displayName: acc.name });
-          await setDoc(doc(auth.app.firestore || (await import('../../firebase/config')).db, 'users', cred.user.uid), {
-            email: acc.email,
-            name: acc.name,
-            role: acc.role,
-            department: acc.dept,
-            createdAt: serverTimestamp()
-          });
-        } catch (e) {
-          console.log(`Account ${acc.email} might already exist:`, e.message);
-        }
-      }
-      
-      await signOut(auth);
-      alert("Demo accounts created successfully! You can now log in with any of them.");
-    } catch (err) {
-      setError("Failed to seed accounts: " + err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return (
-    <div className="container" style={{ maxWidth: '400px', paddingTop: '4rem' }}>
-      <div style={{ background: 'var(--surface)', padding: '2rem', borderRadius: 'var(--radius-lg)', boxShadow: 'var(--shadow-md)' }}>
-        <h2 className="text-h2" style={{ textAlign: 'center', marginBottom: '2rem' }}>Welcome Back</h2>
+    <div style={{ 
+      minHeight: '100vh', 
+      display: 'flex', 
+      alignItems: 'center', 
+      justifyContent: 'center',
+      background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #064e3b 100%)',
+      padding: '2rem'
+    }}>
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.03)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.1)',
+        padding: '3rem',
+        borderRadius: '24px',
+        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+        width: '100%',
+        maxWidth: '440px',
+        color: 'white'
+      }}>
         
-        {error && <div style={{ background: 'var(--danger)', color: 'white', padding: '0.75rem', borderRadius: 'var(--radius-md)', marginBottom: '1rem', fontSize: '0.875rem' }}>{error}</div>}
+        <div style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '12px', background: 'var(--primary-green)', color: '#000', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1.5rem', margin: '0 auto 1rem' }}>
+            CV
+          </div>
+          <h1 style={{ fontSize: '2rem', fontWeight: '700', marginBottom: '0.5rem', letterSpacing: '-0.025em' }}>Welcome Back</h1>
+          <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.95rem' }}>Sign in to continue to Citizen Vox</p>
+        </div>
+        
+        {error && (
+          <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#fca5a5', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', fontSize: '0.875rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            {error}
+          </div>
+        )}
 
-        <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <label className="text-small" style={{ fontWeight: '500' }}>Email</label>
+        <form onSubmit={handleEmailLogin} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'rgba(255,255,255,0.8)' }}>Email Address</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com" 
               required
-              style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', outline: 'none' }} 
+              style={{ padding: '0.875rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none', transition: 'all 0.2s', fontSize: '1rem' }} 
+              onFocus={(e) => e.target.style.borderColor = 'var(--primary-green)'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
             />
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            <div className="flex justify-between">
-              <label className="text-small" style={{ fontWeight: '500' }}>Password</label>
-              <Link to="/forgot-password" className="text-small" style={{ color: 'var(--accent)' }}>Forgot?</Link>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.875rem', fontWeight: '500', color: 'rgba(255,255,255,0.8)' }}>Password</label>
+              <Link to="/forgot-password" style={{ fontSize: '0.875rem', color: 'var(--primary-green)', textDecoration: 'none', fontWeight: '500' }}>Forgot password?</Link>
             </div>
             <input 
               type="password" 
@@ -147,41 +143,68 @@ const Login = () => {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••" 
               required
-              style={{ padding: '0.75rem', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border)', outline: 'none' }} 
+              style={{ padding: '0.875rem 1rem', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(0,0,0,0.2)', color: 'white', outline: 'none', transition: 'all 0.2s', fontSize: '1rem' }} 
+              onFocus={(e) => e.target.style.borderColor = 'var(--primary-green)'}
+              onBlur={(e) => e.target.style.borderColor = 'rgba(255,255,255,0.1)'}
             />
           </div>
           
           <button 
             type="submit" 
             disabled={loading}
-            style={{ padding: '0.75rem', marginTop: '1rem', background: 'var(--text-primary)', color: 'white', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '500', cursor: loading ? 'not-allowed' : 'pointer' }}>
-            {loading ? 'Signing in...' : 'Sign In with Email'}
+            style={{ 
+              padding: '1rem', 
+              marginTop: '0.5rem', 
+              background: 'var(--primary-green)', 
+              color: '#000', 
+              border: 'none', 
+              borderRadius: '12px', 
+              fontWeight: '600', 
+              fontSize: '1rem',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.7 : 1,
+              transition: 'all 0.2s',
+              boxShadow: '0 4px 14px 0 rgba(143, 234, 99, 0.39)'
+            }}>
+            {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
         
-        <div style={{ textAlign: 'center', margin: '1.5rem 0' }} className="text-small text-muted">OR CONTINUE WITH</div>
+        <div style={{ display: 'flex', alignItems: 'center', margin: '2rem 0', gap: '1rem' }}>
+          <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.1)' }}></div>
+          <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.875rem', fontWeight: '500' }}>OR</span>
+          <div style={{ height: '1px', flex: 1, background: 'rgba(255,255,255,0.1)' }}></div>
+        </div>
             
-            <button 
-              type="button" 
-              onClick={handleGoogleLogin}
-              style={{ width: '100%', padding: '0.75rem', background: 'var(--surface-soft)', color: 'var(--text-primary)', border: 'none', borderRadius: 'var(--radius-md)', fontWeight: '500', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-              <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
-              Google
-            </button>
-
-        
-        <p className="text-small" style={{ textAlign: 'center', marginTop: '2rem' }}>
-          Don't have an account? <Link to="/register" style={{ color: 'var(--accent)' }}>Sign up</Link>
-        </p>
-
-        {/* Temporary Seed Button */}
         <button 
-          onClick={seedDemoAccounts}
-          disabled={loading}
-          style={{ width: '100%', padding: '0.5rem', marginTop: '1rem', background: 'var(--surface-soft)', color: 'var(--text-secondary)', border: '1px dashed var(--border)', borderRadius: 'var(--radius-sm)', fontSize: '0.75rem', cursor: 'pointer' }}
+          type="button" 
+          onClick={handleGoogleLogin}
+          style={{ 
+            width: '100%', 
+            padding: '1rem', 
+            background: 'rgba(255,255,255,0.05)', 
+            color: 'white', 
+            border: '1px solid rgba(255,255,255,0.1)', 
+            borderRadius: '12px', 
+            fontWeight: '500', 
+            fontSize: '1rem',
+            cursor: 'pointer', 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'center', 
+            gap: '12px',
+            transition: 'all 0.2s'
+          }}
+          onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
+          onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
         >
-          {loading ? 'Generating...' : '🛠 Auto-Generate Demo Accounts'}
+          <svg width="20" height="20" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12c0-6.627,5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24c0,11.045,8.955,20,20,20c11.045,0,20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"></path><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"></path><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"></path><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"></path></svg>
+          Continue with Google
         </button>
+
+        <p style={{ textAlign: 'center', marginTop: '2.5rem', fontSize: '0.875rem', color: 'rgba(255,255,255,0.6)' }}>
+          Don't have an account? <Link to="/register" style={{ color: 'var(--primary-green)', fontWeight: '600', textDecoration: 'none' }}>Sign up</Link>
+        </p>
       </div>
     </div>
   );

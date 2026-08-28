@@ -1,11 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Activity, AlertTriangle, CheckCircle, PieChart, Clock } from 'lucide-react';
+import { Activity, AlertTriangle, CheckCircle, PieChart, Clock, ShieldCheck, ShieldAlert, Users, BarChart2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { db } from '../../firebase/config';
+import { collection, query, getDocs, where, getCountFromServer } from 'firebase/firestore';
+import { resolutionDurabilityService } from '../../services/resolutionDurabilityService';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const [metrics, setMetrics] = useState(null);
+  const [integrityStats, setIntegrityStats] = useState(null);
+  const [durabilityMetrics, setDurabilityMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -13,13 +19,29 @@ const AdminDashboard = () => {
       try {
         if (!user) return;
         
+        // Fetch 1: Standard Analytics
         const { analyticsService } = await import('../../services/analyticsService');
-        const data = await analyticsService.getAdminDashboardMetrics(
+        const analyticsData = await analyticsService.getAdminDashboardMetrics(
           user.municipalityId, 
           user.departmentId
         );
         
-        setMetrics(data);
+        // Fetch 2: Integrity Stats
+        const [totalUsersSnap, flaggedSnap] = await Promise.all([
+          getCountFromServer(collection(db, 'users')),
+          getCountFromServer(query(collection(db, 'integrity_reports'), where('resolved', '==', false)))
+        ]);
+        
+        // Fetch 3: Resolution Durability
+        const durabilityData = await resolutionDurabilityService.getDurabilityMetrics(user);
+
+        setMetrics(analyticsData);
+        setIntegrityStats({
+          totalUsers: totalUsersSnap.data().count,
+          flaggedIssues: flaggedSnap.data().count,
+        });
+        setDurabilityMetrics(durabilityData);
+
       } catch (err) {
         console.error("Failed to load admin stats:", err);
       } finally {
@@ -38,28 +60,33 @@ const AdminDashboard = () => {
     );
   }
 
-  if (!metrics) return null;
+  if (!metrics || !integrityStats || !durabilityMetrics) return null;
 
   return (
     <div className="dashboard-container" style={{ padding: '2rem' }}>
       <header style={{ marginBottom: '2rem' }}>
-        <h1 className="text-h1" style={{ color: 'var(--text-primary)' }}>CivicPulse Command Center</h1>
+        <h1 className="text-h1" style={{ color: 'var(--text-primary)' }}>Citizen Vox Command Center</h1>
         <p className="text-muted">Global Platform Governance & Intelligence</p>
       </header>
 
+      {/* --- SECTION 1: CORE KPIs --- */}
       <div className="grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.5rem', marginBottom: '2.5rem' }}>
-        
-        {/* KPI Cards */}
         <StatCard icon={<Activity />} label="Total Issues" value={metrics.total || 0} />
-        <StatCard icon={<Activity />} label="Active Issues" value={metrics.active || 0} />
         <StatCard icon={<AlertTriangle color="var(--danger)" />} label="Critical Issues" value={metrics.critical || 0} />
         <StatCard icon={<CheckCircle color="var(--success)" />} label="Resolved Issues" value={metrics.resolved || 0} />
         <StatCard icon={<PieChart />} label="Resolution Rate" value={`${metrics.resolutionRate || 0}%`} />
-        <StatCard icon={<Clock />} label="Avg Resolution Time" value={`${metrics.avgResolutionDays || 0} Days`} />
-
+        
+        {/* Integrity KPIs */}
+        <StatCard icon={<Users color="var(--primary-green)" />} label="Platform Users" value={integrityStats.totalUsers} />
+        <StatCard 
+          icon={<ShieldAlert color={integrityStats.flaggedIssues > 0 ? 'var(--danger)' : 'var(--success)'} />} 
+          label="Flagged Reports" 
+          value={integrityStats.flaggedIssues} 
+        />
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem' }}>
+      {/* --- SECTION 2: CHARTS & BREAKDOWNS --- */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '2rem', marginBottom: '2.5rem' }}>
         {/* Category Breakdown */}
         <div style={{ background: 'var(--surface)', padding: '1.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)' }}>
           <h3 className="text-h3" style={{ marginBottom: '1.5rem' }}>Category Breakdown</h3>
@@ -113,6 +140,64 @@ const AdminDashboard = () => {
             </div>
           )}
         </div>
+      </div>
+
+      {/* --- SECTION 3: DURABILITY & REOPENED ISSUES --- */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '2rem' }}>
+        
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <h3 className="text-h3" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+             <CheckCircle color="var(--primary-green)"/> Resolution Durability
+          </h3>
+          
+          <div style={{ textAlign: 'center', padding: '1.5rem', background: 'var(--bg-main)', borderRadius: 'var(--radius-md)' }}>
+            <div className="text-h1" style={{ color: 'var(--primary-green)' }}>{durabilityMetrics.durability}%</div>
+            <p className="text-small text-muted text-uppercase" style={{ marginTop: '0.5rem' }}>Durability Score</p>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid var(--border)' }}>
+            <span className="text-muted">Citizen Approval</span>
+            <span style={{ fontWeight: 600 }}>{durabilityMetrics.approvalRate}%</span>
+          </div>
+          
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem', borderBottom: '1px solid var(--border)' }}>
+            <span className="text-muted">Avg Resolution Time</span>
+            <span style={{ fontWeight: 600 }}>{durabilityMetrics.avgResolutionTime}h</span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', padding: '1rem' }}>
+            <span className="text-muted">Reopened Issues</span>
+            <span style={{ fontWeight: 600, color: 'var(--danger)' }}>{durabilityMetrics.reopened}</span>
+          </div>
+        </div>
+
+        <div style={{ background: 'var(--surface)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border)', padding: '2rem' }}>
+          <h3 className="text-h3" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <ShieldAlert color="var(--warning)" /> Problematic Resolutions
+          </h3>
+          
+          {durabilityMetrics.problemIssues.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '3rem', background: 'var(--bg-main)', borderRadius: 'var(--radius-md)' }}>
+              <ShieldCheck size={48} color="var(--success)" style={{ margin: '0 auto 1rem' }} />
+              <p className="text-muted">Excellent. No issues have been repeatedly reopened.</p>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gap: '1rem' }}>
+              {durabilityMetrics.problemIssues.map(issue => (
+                <div key={issue.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'var(--bg-main)', borderRadius: 'var(--radius-md)', borderLeft: '4px solid var(--danger)' }}>
+                  <div>
+                    <h4 style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{issue.title}</h4>
+                    <p className="text-small text-muted">Reopened {issue.reopenedCount} times • Dept: {issue.departmentId || 'Unassigned'}</p>
+                  </div>
+                  <Link to={`/admin/issues/${issue.id}`} style={{ padding: '0.5rem 1rem', background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-sm)', textDecoration: 'none', color: 'var(--text-primary)', fontSize: '0.875rem' }}>
+                    Investigate
+                  </Link>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+        
       </div>
     </div>
   );

@@ -31,12 +31,8 @@ const AdminLayout = () => {
     { icon: <Map size={20} />, label: 'Map', path: '/admin/map' },
     { icon: <Users size={20} />, label: 'Workers', path: '/admin/workers' },
     { icon: <FileText size={20} />, label: 'Departments', path: '/admin/departments' },
-    { icon: <FileText size={20} />, label: 'Escalations', path: '/admin/escalations' },
     { icon: <LayoutDashboard size={20} />, label: 'Civic Memory', path: '/admin/civic-memory' },
-    { icon: <FileText size={20} />, label: 'Resolution Performance', path: '/admin/resolution-performance' },
-    { icon: <FileText size={20} />, label: 'Integrity', path: '/admin/integrity' },
-    { icon: <LayoutDashboard size={20} />, label: 'Civic Copilot', path: '/admin/copilot' },
-    { icon: <FileText size={20} />, label: 'Audit Logs', path: '/admin/audit-logs' },
+    { icon: <LayoutDashboard size={20} />, label: 'Civic Copilot', path: '/admin/copilot' }
   ];
 
   if (loading) return <div>Loading...</div>;
@@ -48,7 +44,7 @@ const AdminLayout = () => {
         <div className="sidebar-header">
           <div className="logo-brand">
             <div className="logo-mark"></div>
-            <span className="logo-text">CivicPulse</span>
+            <span className="logo-text">Citizen Vox</span>
           </div>
           <span className="role-badge">{roleBadge}</span>
         </div>

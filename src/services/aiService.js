@@ -54,58 +54,48 @@ export const aiService = {
   },
 
   /**
-   * Ask Civic Copilot a question based on provided context
+   * Ask Civic Copilot a question based on provided context.
+   * Calls Gemini API directly — no Cloudflare Worker dependency for copilot.
    */
   askCopilot: async (question, contextData, role = 'Admin') => {
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error('VITE_GEMINI_API_KEY is missing from .env');
+    }
+
+    const systemPrompt = `You are Citizen Vox AI, an intelligent civic governance assistant. 
+You help ${role}s analyze civic issues, understand trends, and make data-driven decisions.
+Always be concise, factual, and actionable. Base your answers on the provided context data.`;
+
+    const prompt = `Context Data:\n${JSON.stringify(contextData, null, 2)}\n\nQuestion: ${question}`;
+
+    const payload = {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.3, maxOutputTokens: 1024 }
+    };
+
     try {
-      const response = await fetch(`${WORKER_BASE}/api/copilot`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question, contextData, role })
-      });
-
-      if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Copilot backend failed: ${errText}`);
-      }
-
-      const data = await response.json();
-      if (!data.success) throw new Error(data.error || 'Copilot failed.');
-
-      return data.answer;
-    } catch (error) {
-      console.warn("Cloudflare Worker failed. Falling back to direct Gemini API call...", error);
-      
-      // FALLBACK TO DIRECT REST API
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) {
-        throw new Error('Worker failed and VITE_GEMINI_API_KEY is missing for fallback.');
-      }
-
-      const systemPrompt = "You are CivicPulse AI Assistant. Help admins and citizens query ticket statuses, ward analytics, and civic issue resolution workflows.";
-      const prompt = `Context: ${JSON.stringify(contextData)}\n\nQuestion: ${question}`;
-      
-      const payload = {
-        systemInstruction: { parts: [{ text: systemPrompt }] },
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2 }
-      };
-
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`,
+        {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload)
-        });
+        }
+      );
 
-        if (!res.ok) throw new Error('Direct Gemini API call failed.');
-        const geminiData = await res.json();
-        
-        return geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "I am currently unable to answer that question.";
-      } catch (fallbackError) {
-        console.error("Copilot Fallback Error:", fallbackError);
-        throw fallbackError;
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(`Gemini API error ${res.status}: ${errBody?.error?.message || res.statusText}`);
       }
+
+      const data = await res.json();
+      return data.candidates?.[0]?.content?.parts?.[0]?.text
+        || 'I was unable to generate a response. Please try again.';
+    } catch (error) {
+      console.error('Copilot Error:', error);
+      throw error;
     }
   }
 };

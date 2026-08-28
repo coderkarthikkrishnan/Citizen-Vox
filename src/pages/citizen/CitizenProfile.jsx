@@ -17,6 +17,22 @@ const CitizenProfile = () => {
     shareLocation: true,
     visibilityRadius: 5 // miles
   });
+  const [showFullLeaderboard, setShowFullLeaderboard] = useState(false);
+  const [fullLeaderboard, setFullLeaderboard] = useState([]);
+  const [loadingFull, setLoadingFull] = useState(false);
+
+  const openFullLeaderboard = async () => {
+    setShowFullLeaderboard(true);
+    setLoadingFull(true);
+    try {
+      const data = await gamificationService.getLeaderboard(50);
+      setFullLeaderboard(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingFull(false);
+    }
+  };
 
   useEffect(() => {
     if (user?.uid) {
@@ -214,7 +230,7 @@ const CitizenProfile = () => {
             )}
             
             <div style={{ padding: '1rem', textAlign: 'center', borderTop: '1px solid var(--border-light)' }}>
-              <span style={{ fontSize: '0.875rem', color: 'var(--primary-green)', fontWeight: 600, cursor: 'pointer' }}>View Global Rankings →</span>
+              <span onClick={openFullLeaderboard} style={{ fontSize: '0.875rem', color: 'var(--primary-green)', fontWeight: 600, cursor: 'pointer' }}>View Global Rankings →</span>
             </div>
           </div>
         </motion.div>
@@ -280,6 +296,59 @@ const CitizenProfile = () => {
           transform: translateY(-2px);
         }
       `}</style>
+
+      {/* Global Rankings Modal */}
+      {showFullLeaderboard && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div style={{ background: 'var(--surface)', width: '100%', maxWidth: '500px', maxHeight: '80vh', borderRadius: 'var(--radius-lg)', display: 'flex', flexDirection: 'column', overflow: 'hidden', boxShadow: 'var(--shadow-lg)' }}>
+            <div style={{ padding: '1.5rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--near-black)', color: 'white' }}>
+              <h3 className="text-h3" style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <TrendingUp color="var(--primary-green)" /> Global Rankings
+              </h3>
+              <button onClick={() => setShowFullLeaderboard(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '1.5rem', lineHeight: 1 }}>&times;</button>
+            </div>
+            
+            <div style={{ padding: '1rem', overflowY: 'auto', flex: 1 }}>
+              {loadingFull ? (
+                <div style={{ padding: '2rem', textAlign: 'center' }}>Loading all rankings...</div>
+              ) : (
+                fullLeaderboard.map((lbUser, index) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    padding: '1rem', 
+                    borderBottom: index < fullLeaderboard.length - 1 ? '1px solid var(--border-light)' : 'none',
+                    background: lbUser.id === user?.uid ? 'rgba(143,234,99,0.05)' : 'transparent',
+                    borderRadius: '8px'
+                  }}>
+                    <div style={{ width: '40px', fontWeight: 700, color: index < 3 ? 'var(--warning)' : 'var(--text-secondary)' }}>
+                      #{index + 1}
+                    </div>
+                    <div style={{ 
+                      width: '32px', height: '32px', 
+                      borderRadius: '50%', 
+                      background: lbUser.id === user?.uid ? 'var(--primary-green)' : 'var(--border-light)', 
+                      color: lbUser.id === user?.uid ? 'var(--dark-green)' : 'var(--text-primary)', 
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', 
+                      fontSize: '0.875rem', fontWeight: 600,
+                      marginRight: '1rem' 
+                    }}>
+                      {lbUser.name ? lbUser.name.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    <div style={{ flex: 1, fontWeight: lbUser.id === user?.uid ? 700 : 500 }}>
+                      {lbUser.name || 'Citizen'}
+                      {lbUser.id === user?.uid && <span style={{ fontSize: '0.75rem', color: 'var(--primary-green)', marginLeft: '0.5rem' }}>(You)</span>}
+                    </div>
+                    <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {lbUser.xp.toLocaleString()} XP
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -198,5 +198,27 @@ export const taskService = {
     } catch (error) {
       console.error("Error writing status history:", error);
     }
+  },
+
+  /**
+   * Fetches status history for a given issue
+   */
+  getHistory: async (issueId) => {
+    try {
+      const q = query(
+        collection(db, 'statusHistory'),
+        where('clusterId', '==', issueId),
+        orderBy('changedAt', 'desc')
+      );
+      const snapshot = await getDocs(q);
+      const history = [];
+      snapshot.forEach(doc => {
+        history.push({ id: doc.id, ...doc.data() });
+      });
+      return history;
+    } catch (error) {
+      console.error("Error fetching status history:", error);
+      return [];
+    }
   }
 };

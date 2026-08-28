@@ -22,6 +22,9 @@ export const useAuth = () => {
             const userData = userDoc.data();
             currentUser.role = userData.role || 'citizen';
             currentUser.department = userData.department || null;
+            currentUser.municipalityId = userData.municipalityId || null;
+            // Override auth displayName with database name if it exists
+            currentUser.displayName = userData.name || userData.displayName || currentUser.displayName;
           } else {
             currentUser.role = 'citizen';
           }

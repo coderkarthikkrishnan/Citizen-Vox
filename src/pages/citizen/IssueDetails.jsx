@@ -1,20 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { MapPin, ArrowLeft, ShieldCheck, AlertTriangle, MessageSquare, Clock, Navigation } from 'lucide-react';
+import { MapPin, ArrowLeft, ShieldCheck, AlertTriangle, MessageSquare, Clock, Navigation, CheckCircle } from 'lucide-react';
 import { issueService } from '../../services/issueService';
+import { taskService } from '../../services/taskService';
 import Button from '../../components/common/Button';
+import ResolutionVerification from '../../components/resolution/ResolutionVerification';
+import { useAuth } from '../../hooks/useAuth';
 
 const IssueDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [issue, setIssue] = useState(null);
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const { user } = useAuth();
+  const [endorsing, setEndorsing] = useState(false);
 
   useEffect(() => {
     const fetchIssue = async () => {
       try {
         const data = await issueService.getIssueById(id);
+        const historyData = await taskService.getHistory(id);
         setIssue(data);
+        setHistory(historyData);
       } catch (e) {
         console.error(e);
       } finally {
@@ -27,8 +36,8 @@ const IssueDetails = () => {
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
   if (!issue) return <div style={{ padding: '2rem', textAlign: 'center' }}>Issue not found</div>;
 
-  const confidence = issue.confidenceScore || 85; // fallback for demo
-  const priority = issue.priority?.level || 'High'; // fallback
+  const confidence = issue.confidenceScore || (issue.endorsements ? Math.min(100, 50 + (issue.endorsements.length * 5)) : 50);
+  const priority = issue.priority?.level || 'Medium';
   const isCritical = priority.toLowerCase() === 'critical';
 
   return (
@@ -120,14 +129,113 @@ const IssueDetails = () => {
           </div>
         )}
 
+        {/* Administrative Details */}
+        <div className="card-premium" style={{ marginBottom: '24px' }}>
+          <h3 className="text-h4" style={{ marginBottom: '12px' }}>Issue Details</h3>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 4px' }}>Assigned Department</p>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>{issue.assignedDepartment || 'Pending Assignment'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 4px' }}>Assigned Worker</p>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>{issue.assignedWorkerName || 'Unassigned'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 4px' }}>Reported By</p>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>{issue.reportedBy === user?.uid ? 'You' : 'Anonymous Citizen'}</p>
+            </div>
+            <div>
+              <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 4px' }}>Reported Date</p>
+              <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: 0 }}>
+                {issue.createdAt?.toDate ? issue.createdAt.toDate().toLocaleDateString() : 'Recent'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Status Timeline */}
+        {history.length > 0 && (
+          <div className="card-premium" style={{ marginBottom: '24px' }}>
+            <h3 className="text-h4" style={{ marginBottom: '16px' }}>Status History</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', position: 'relative' }}>
+              <div style={{ position: 'absolute', left: '16px', top: '16px', bottom: '16px', width: '2px', background: 'var(--border-light)', zIndex: 0 }}></div>
+              {history.map((item, idx) => (
+                <div key={idx} style={{ display: 'flex', gap: '16px', position: 'relative', zIndex: 1 }}>
+                  <div style={{ width: '34px', height: '34px', borderRadius: '50%', background: 'var(--surface)', border: '2px solid var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Clock size={16} color="var(--primary)" />
+                  </div>
+                  <div style={{ paddingTop: '6px' }}>
+                    <p style={{ fontWeight: 600, fontSize: '0.875rem', margin: '0 0 4px', textTransform: 'capitalize' }}>{item.toStatus.replace(/_/g, ' ')}</p>
+                    <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', margin: '0 0 4px' }}>
+                      {item.changedAt?.toDate ? item.changedAt.toDate().toLocaleString() : 'Recent'}
+                    </p>
+                    {item.note && <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', margin: 0, padding: '8px', background: 'var(--surface-soft)', borderRadius: '6px' }}>{item.note}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       
-      {/* Verify Button (Mock logic for now) */}
-      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 24px 32px', background: 'var(--surface)', borderTop: '1px solid var(--border-light)' }}>
-        <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '16px' }}>
-          <Button variant="outline" style={{ flex: 1 }}>Add Photo</Button>
-          <Button variant="primary" style={{ flex: 2 }}>Confirm Issue</Button>
+      {/* Resolution Details */}
+      {(issue.resolutionNotes || (issue.resolutionMedia && issue.resolutionMedia.length > 0)) && (
+        <div style={{ padding: '0 24px 24px' }}>
+          <div className="card-premium" style={{ border: '1px solid var(--primary-green)', background: 'rgba(143,234,99,0.05)' }}>
+            <h3 className="text-h4" style={{ marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-green)' }}>
+              <CheckCircle size={20} /> Resolution Evidence
+            </h3>
+            
+            {issue.resolutionNotes && (
+              <p className="text-body" style={{ color: 'var(--text-secondary)', marginBottom: '16px' }}>{issue.resolutionNotes}</p>
+            )}
+
+            {issue.resolutionMedia && issue.resolutionMedia.length > 0 && (
+              <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px' }}>
+                {issue.resolutionMedia.map((m, i) => (
+                  <img key={i} src={m.url} alt="Resolution Evidence" style={{ width: '120px', height: '120px', objectFit: 'cover', borderRadius: '8px', border: '1px solid var(--border)' }} />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
+      )}
+
+      <div style={{ padding: '0 24px 40px' }}>
+        {(issue.status === 'Awaiting Verification' || issue.status === 'awaiting_final_verification' || issue.status === 'Resolved' || issue.currentStatus === 'Resolved') ? (
+          <ResolutionVerification 
+            issue={issue} 
+            onVerificationComplete={() => {
+              issueService.getIssueById(id).then(setIssue);
+            }} 
+          />
+        ) : (
+          <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, padding: '16px 24px 32px', background: 'var(--surface)', borderTop: '1px solid var(--border-light)', zIndex: 100 }}>
+            <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '16px' }}>
+              <Button 
+                variant="primary" 
+                style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}
+                disabled={endorsing || !user || issue.reportedBy === user?.uid || (issue.endorsements && issue.endorsements.includes(user?.uid))}
+                onClick={async () => {
+                  if (!user) return;
+                  setEndorsing(true);
+                  const success = await issueService.endorseIssue(issue.id, user.uid);
+                  if (success) {
+                    alert("Thanks for verifying! Your vote increased the community confidence.");
+                    issueService.getIssueById(id).then(setIssue);
+                  } else {
+                    alert("You have already endorsed this issue, or you cannot endorse your own issue.");
+                  }
+                  setEndorsing(false);
+                }}
+              >
+                <ShieldCheck size={20} />
+                {(issue.endorsements && issue.endorsements.includes(user?.uid)) ? 'Endorsed' : 'Endorse Issue'}
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

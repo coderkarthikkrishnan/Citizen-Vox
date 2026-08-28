@@ -51,7 +51,7 @@ const AuthorityMap = () => {
         const result = await authorityService.getPriorityQueue(user, { status: 'All' }, 200);
         
         // Filter out those without valid coordinates
-        const validIssues = result.issues.filter(i => i.latitude && i.longitude);
+        const validIssues = result.issues.filter(i => (i.latitude && i.longitude) || (i.location?.lat && i.location?.lng));
         setIssues(validIssues);
       } catch (err) {
         console.error("Map fetch error:", err);
@@ -64,7 +64,7 @@ const AuthorityMap = () => {
 
   // Dynamically set map center based on issues if possible
   const mapCenter = issues.length > 0 
-    ? { lat: issues[0].latitude, lng: issues[0].longitude } 
+    ? { lat: issues[0].latitude || issues[0].location?.lat, lng: issues[0].longitude || issues[0].location?.lng } 
     : center;
 
   return (
@@ -106,7 +106,7 @@ const AuthorityMap = () => {
               return (
                 <Marker 
                   key={issue.id} 
-                  position={{ lat: issue.latitude, lng: issue.longitude }}
+                  position={{ lat: issue.latitude || issue.location?.lat, lng: issue.longitude || issue.location?.lng }}
                   icon={icon}
                 >
                   <Popup className="authority-map-popup">

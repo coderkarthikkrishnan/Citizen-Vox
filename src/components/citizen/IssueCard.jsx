@@ -93,18 +93,24 @@ const IssueCard = ({ issue, showConfidence = false, onDelete }) => {
         </div>
 
         {/* Post-Resolution Verification Prompt */}
-        {issue.status === 'awaiting_final_verification' && user && issue.reportedBy === user.uid && (
-          <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '8px' }} onClick={(e) => e.preventDefault()}>
+        {(issue.status === 'awaiting_final_verification' || issue.status === 'Awaiting Verification' || issue.status === 'Resolved' || issue.status === 'Verifying') && user && issue.reportedBy === user.uid && (
+          <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '8px', border: '1px solid #cbd5e1', marginTop: '8px' }} onClick={(e) => {
+            // Only stop propagation for the Yes button, let No button bubble to the link
+            if (e.target.closest('.yes-btn')) {
+              e.preventDefault();
+            }
+          }}>
             <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--near-black)', margin: '0 0 8px 0' }}>Authorities marked this as resolved. Is it fixed?</p>
             <div style={{ display: 'flex', gap: '8px' }}>
               <button 
+                className="yes-btn"
                 onClick={(e) => handleVerify(e, true)}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: 'var(--primary-green)', color: 'var(--near-black)', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}
               >
                 <CheckCircle size={14} /> Yes, Fixed
               </button>
               <button 
-                onClick={(e) => handleVerify(e, false)}
+                onClick={(e) => { /* let it bubble to the link to open IssueDetails */ }}
                 style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', background: '#fee2e2', color: '#b91c1c', border: 'none', padding: '8px', borderRadius: '6px', fontWeight: 600, fontSize: '0.75rem', cursor: 'pointer' }}
               >
                 <XCircle size={14} /> No, Persists

@@ -25,28 +25,34 @@ export const copilotService = {
       
       // Intent: Critical / Priority / Attention
       if (qLower.includes('critical') || qLower.includes('attention') || qLower.includes('priority')) {
-        let q = collection(db, 'issues');
-        let queryConstraints = [where('status', 'not-in', ['closed', 'Resolved']), orderBy('status'), orderBy('createdAt', 'desc'), limit(20)];
-        
+        let queryConstraints = [orderBy('createdAt', 'desc'), limit(50)];
         if (user?.municipalityId) queryConstraints.push(where('municipalityId', '==', user.municipalityId));
         
-        const snapshot = await getDocs(query(q, ...queryConstraints));
+        const snapshot = await getDocs(query(collection(db, 'issues'), ...queryConstraints));
         const issues = [];
         snapshot.forEach(doc => {
           const data = doc.data();
+          const status = data.status || '';
+          if (status === 'closed' || status === 'Resolved' || status === 'resolved') return;
           if (data.priority?.level === 'Critical' || data.priority?.level === 'High') {
-             issues.push({ id: doc.id, title: data.title, category: data.category, priority: data.priority?.level, daysOpen: Math.floor((new Date() - new Date(data.createdAt?.toDate?.() || data.createdAt)) / (1000 * 60 * 60 * 24)) });
+            issues.push({ 
+              id: doc.id, 
+              title: data.title, 
+              category: data.category, 
+              priority: data.priority?.level, 
+              status,
+              daysOpen: Math.floor((new Date() - new Date(data.createdAt?.toDate?.() || data.createdAt)) / (1000 * 60 * 60 * 24)) 
+            });
           }
         });
         return { intent: 'priority', criticalIssues: issues };
       }
       
       // General Context (Fallback)
-      let q = collection(db, 'issues');
       let queryConstraints = [orderBy('createdAt', 'desc'), limit(15)];
       if (user?.municipalityId) queryConstraints.push(where('municipalityId', '==', user.municipalityId));
       
-      const snapshot = await getDocs(query(q, ...queryConstraints));
+      const snapshot = await getDocs(query(collection(db, 'issues'), ...queryConstraints));
       const issues = [];
       snapshot.forEach(doc => {
         const data = doc.data();

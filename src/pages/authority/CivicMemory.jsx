@@ -16,61 +16,8 @@ const CivicMemory = () => {
     const fetchMemory = async () => {
       setLoading(true);
       try {
-        const issues = await authorityService.getAllIssues(user);
-        
-        // Simple Haversine distance function in meters
-        const getDistance = (lat1, lon1, lat2, lon2) => {
-          if (!lat1 || !lon1 || !lat2 || !lon2) return Infinity;
-          const R = 6371e3;
-          const rLat1 = lat1 * Math.PI/180, rLat2 = lat2 * Math.PI/180;
-          const dLat = (lat2-lat1) * Math.PI/180, dLon = (lon2-lon1) * Math.PI/180;
-          const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                    Math.cos(rLat1) * Math.cos(rLat2) *
-                    Math.sin(dLon/2) * Math.sin(dLon/2);
-          return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        };
-
-        const clusters = [];
-        issues.forEach(issue => {
-          if (!issue.location?.lat || !issue.location?.lng) return;
-          
-          let added = false;
-          for (let cluster of clusters) {
-            // Check if issue is within 100m of the cluster's center
-            if (getDistance(cluster.lat, cluster.lng, issue.location.lat, issue.location.lng) <= 100) {
-              cluster.issues.push(issue);
-              // Recalculate center roughly
-              cluster.lat = (cluster.lat * (cluster.issues.length - 1) + issue.location.lat) / cluster.issues.length;
-              cluster.lng = (cluster.lng * (cluster.issues.length - 1) + issue.location.lng) / cluster.issues.length;
-              added = true;
-              break;
-            }
-          }
-          if (!added) {
-            clusters.push({
-              id: `cluster-${issue.id}`,
-              lat: issue.location.lat,
-              lng: issue.location.lng,
-              category: issue.category,
-              title: `Cluster near ${issue.locationName || 'Unknown Location'}`,
-              issues: [issue]
-            });
-          }
-        });
-
-        // Filter for chronic defects (>= 3 issues)
-        const chronicClusters = clusters
-          .filter(c => c.issues.length >= 3)
-          .map(c => ({
-            id: c.id,
-            title: c.title,
-            category: c.category,
-            recurrenceCount: c.issues.length,
-            impact: 'Chronic Infrastructure Defect spanning multiple reports over time.',
-            firstIssueId: c.issues[0].id
-          }));
-          
-        setMemoryRecords(chronicClusters);
+        const records = await civicMemoryService.getMemoryRecords();
+        setMemoryRecords(records);
       } catch (err) {
         console.error("Failed to load civic memory:", err);
       } finally {
@@ -141,7 +88,7 @@ const CivicMemory = () => {
                   <div style={{ display: 'flex', gap: '1rem' }}>
                     <span className="text-small" style={{ fontWeight: 600 }}>{record.recurrenceCount} Occurrences</span>
                   </div>
-                  <Link to={`/admin/issues/${record.firstIssueId}`} className="text-small" style={{ color: 'var(--primary-green)', fontWeight: 600, textDecoration: 'none' }}>View Issue</Link>
+                  <Link to={`/admin/issues/${record.linkedIssues?.[0] || record.id}`} className="text-small" style={{ color: 'var(--primary-green)', fontWeight: 600, textDecoration: 'none' }}>View Issue</Link>
                 </div>
               </div>
             );

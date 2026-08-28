@@ -8,7 +8,7 @@ export const LanguageProvider = ({ children }) => {
 
   // Load from local storage on mount
   useEffect(() => {
-    const savedLang = localStorage.getItem('civicpulse_lang');
+    const savedLang = localStorage.getItem('Citizen Vox_lang');
     if (savedLang && SUPPORTED_LANGUAGES[savedLang]) {
       setLangCode(savedLang);
     }
@@ -17,7 +17,7 @@ export const LanguageProvider = ({ children }) => {
   const setLanguage = (code) => {
     if (SUPPORTED_LANGUAGES[code]) {
       setLangCode(code);
-      localStorage.setItem('civicpulse_lang', code);
+      localStorage.setItem('Citizen Vox_lang', code);
     }
   };
 

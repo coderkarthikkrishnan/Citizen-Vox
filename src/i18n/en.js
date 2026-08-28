@@ -1,6 +1,6 @@
 export const en = {
   // General
-  "app.title": "CivicPulse",
+  "app.title": "Citizen Vox",
   "app.tagline": "Real-time civic issue reporting",
 
   // Report Flow
@@ -69,7 +69,7 @@ export const en = {
   "dash.loading": "Loading...",
   "dash.noIssues": "No active issues",
   "dash.noIssuesDesc": "You haven't reported anything recently.",
-  "dash.mapTitle": "CivicPulse Map",
+  "dash.mapTitle": "Citizen Vox Map",
   "dash.mapDesc": "See verified issues in your neighborhood.",
   "dash.exploreMap": "Explore Map",
 

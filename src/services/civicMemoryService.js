@@ -14,14 +14,14 @@ export const civicMemoryService = {
 
       if (!memorySnap.exists()) {
         // Create initial memory record linked to the cluster ID
-        const clusterSnap = await getDoc(doc(db, 'issueClusters', originalClusterId));
+        const clusterSnap = await getDoc(doc(db, 'issues', originalClusterId));
         const clusterData = clusterSnap.exists() ? clusterSnap.data() : {};
 
         await setDoc(memoryRef, {
           title: clusterData.title || newIssueData.title,
           category: clusterData.category || newIssueData.category,
-          latitude: newIssueData.latitude,
-          longitude: newIssueData.longitude,
+          latitude: newIssueData.latitude || newIssueData.location?.lat || 0,
+          longitude: newIssueData.longitude || newIssueData.location?.lng || 0,
           firstReportedAt: clusterData.createdAt || serverTimestamp(),
           latestRecurrenceAt: serverTimestamp(),
           recurrenceCount: 1,

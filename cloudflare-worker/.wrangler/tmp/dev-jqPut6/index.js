@@ -339,7 +339,7 @@ async function handleAnalyzeIssue(request, env) {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
-  const systemPrompt = `You are the "CivicPulse Civic Issue Analyst". Your job is to analyze civic issue reports.
+  const systemPrompt = `You are the "Citizen Vox Civic Issue Analyst". Your job is to analyze civic issue reports.
 Analyze the provided description, user-selected category, and any image evidence descriptions to classify the issue.
 IMPORTANT RULES:
 - Do not invent facts.
@@ -420,7 +420,7 @@ async function handleCheckDuplicates(request, env) {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
-  const systemPrompt = `You are the CivicPulse Duplicate Detection Engine. 
+  const systemPrompt = `You are the Citizen Vox Duplicate Detection Engine. 
 You are given a NEW citizen report and a list of CANDIDATE reports that occurred nearby.
 Your job is to determine if the new report describes the EXACT SAME physical real-world problem as one of the candidates.
 
@@ -485,7 +485,7 @@ async function handleAnalyzeIntelligence(request, env) {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
-  const systemPrompt = `You are the CivicPulse Intelligence Analyst.
+  const systemPrompt = `You are the Citizen Vox Intelligence Analyst.
 You will be provided with computed metrics and trends representing civic issues in a region over a time period.
 Your task is to summarize these facts for a city authority dashboard.
 
@@ -534,7 +534,7 @@ async function handleCopilot(request, env) {
       headers: { ...corsHeaders, "Content-Type": "application/json" }
     });
   }
-  const systemPrompt = `You are Civic Copilot, an AI assistant for a CivicPulse ${role}.
+  const systemPrompt = `You are Civic Copilot, an AI assistant for a Citizen Vox ${role}.
 Your job is to answer questions about civic operations strictly using the provided context data.
 
 IMPORTANT RULES:

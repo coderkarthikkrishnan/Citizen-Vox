@@ -29,12 +29,8 @@ import AuthorityIssueDetails from './pages/authority/AuthorityIssueDetails';
 import AuthorityMap from './pages/authority/AuthorityMap';
 import Workers from './pages/department/Workers';
 import Departments from './pages/admin/Departments';
-import Escalations from './pages/authority/Escalations';
 import CivicMemory from './pages/authority/CivicMemory';
-import ResolutionPerformance from './pages/admin/ResolutionPerformance';
-import AdminIntegrity from './pages/admin/AdminIntegrity';
 import CivicCopilot from './pages/authority/CivicCopilot';
-import AuditLogs from './pages/admin/AuditLogs';
 
 import WorkerDashboard from './pages/worker/WorkerDashboard';
 import WorkerTasks from './pages/worker/WorkerTasks';
@@ -76,12 +72,8 @@ function App() {
             <Route path="map" element={<AuthorityMap />} />
             <Route path="workers" element={<Workers />} />
             <Route path="departments" element={<Departments />} />
-            <Route path="escalations" element={<Escalations />} />
             <Route path="civic-memory" element={<CivicMemory />} />
-            <Route path="resolution-performance" element={<ResolutionPerformance />} />
-            <Route path="integrity" element={<AdminIntegrity />} />
             <Route path="copilot" element={<CivicCopilot />} />
-            <Route path="audit-logs" element={<AuditLogs />} />
           </Route>
         </Route>
 

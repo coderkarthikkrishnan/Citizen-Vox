@@ -146,6 +146,25 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // ─── Gamification Profiles ────────────────────────────────────────────
+    match /gamificationProfiles/{userId} {
+      // All authenticated users can read profiles (for leaderboard)
+      allow read: if isAuthenticated();
+      // Users can create/update their own profile; system writes allowed
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (
+        request.auth.uid == userId || isAdmin()
+      );
+      allow delete: if isAdmin();
+    }
+
+    // ─── Resolution Verifications ─────────────────────────────────────────
+    match /resolutionVerifications/{verificationId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isAuthenticated();
+      allow delete: if isAdmin();
+    }
+
     // ─── Civic Memory ─────────────────────────────────────────────────────
     match /civicMemory/{memId} {
       allow read: if isAuthenticated();

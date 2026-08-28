@@ -41,7 +41,7 @@ const PriorityQueue = () => {
     <div style={{ padding: '2rem', maxWidth: '1200px', margin: '0 auto' }}>
       <header style={{ marginBottom: '2rem' }}>
         <h1 className="text-h1">Priority Command Center</h1>
-        <p className="text-muted">Issues ranked by the CivicPulse Priority Engine.</p>
+        <p className="text-muted">Issues ranked by the Citizen Vox Priority Engine.</p>
       </header>
 
       <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '2rem', flexWrap: 'wrap' }}>

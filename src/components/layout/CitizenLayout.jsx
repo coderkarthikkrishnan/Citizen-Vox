@@ -63,7 +63,7 @@ const CitizenLayout = () => {
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--primary)', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
               CV
             </div>
-            <span className="logo-text hide-mobile" style={{ color: 'var(--text-primary)' }}>CivicPulse</span>
+            <span className="logo-text hide-mobile" style={{ color: 'var(--text-primary)' }}>Citizen Vox</span>
           </Link>
         </div>
 
@@ -90,7 +90,7 @@ const CitizenLayout = () => {
       </main>
 
       {/* Mobile bottom navigation */}
-      {location.pathname !== '/citizen/report' && (
+      {(location.pathname !== '/citizen/report' && !location.pathname.match(/^\/citizen\/issues\/./)) && (
         <nav className="mobile-nav">
           <Link to="/citizen" className={`mobile-nav-item ${location.pathname === '/citizen' ? 'active' : ''}`}>
             <Home size={24} />

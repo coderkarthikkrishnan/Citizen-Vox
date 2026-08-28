@@ -51,7 +51,7 @@ const Landing = () => {
             </h1>
             <p className="text-body" style={{ color: 'var(--text-secondary)', fontSize: '1.25rem', maxWidth: '600px', margin: '0 auto 3rem auto' }}>
               Report. Verify. Prioritize. Resolve.<br/>
-              CivicPulse turns civic problems into real actions.
+              Citizen Vox turns civic problems into real actions.
             </p>
             <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
               <Link to="/register" style={{ textDecoration: 'none' }}>
@@ -91,7 +91,7 @@ const Landing = () => {
       {/* 3. PLATFORM PREVIEW SECTION */}
       <section id="features" style={{ padding: '140px 0', background: 'var(--off-white)', color: 'var(--text-primary)', borderRadius: '40px 40px 0 0', position: 'relative', marginTop: '-40px' }}>
         <div className="container" style={{ textAlign: 'center', marginBottom: '4rem' }}>
-          <h2 className="text-h2" style={{ marginBottom: '1rem' }}>CivicPulse in Action</h2>
+          <h2 className="text-h2" style={{ marginBottom: '1rem' }}>Citizen Vox in Action</h2>
           <p className="text-body text-muted" style={{ fontSize: '1.125rem' }}>From reporting to resolution — a transparent and accountable civic ecosystem.</p>
         </div>
 
@@ -101,7 +101,7 @@ const Landing = () => {
             <div style={{ width: '220px', background: 'var(--near-black)', color: 'var(--white)', padding: '1.5rem 1rem', display: 'none' }} className="hide-mobile show-desktop">
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '2rem' }}>
                 <div style={{ width: '24px', height: '24px', background: 'var(--primary-green)', borderRadius: '6px' }}></div>
-                <span style={{ fontWeight: 700 }}>CivicPulse</span>
+                <span style={{ fontWeight: 700 }}>Citizen Vox</span>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <div style={{ padding: '8px 12px', background: 'rgba(143,234,99,0.1)', color: 'var(--primary-green)', borderRadius: '8px', fontSize: '0.875rem', fontWeight: 500, borderLeft: '2px solid var(--primary-green)' }}>Dashboard</div>
@@ -198,11 +198,11 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* 4. WHY CIVICPULSE SECTION */}
+      {/* 4. WHY Citizen Vox SECTION */}
       <section id="about-us" style={{ padding: '140px 0', background: 'var(--white)' }}>
         <div className="container">
           <div style={{ textAlign: 'center', marginBottom: '4rem' }}>
-            <h2 className="text-h2" style={{ color: 'var(--near-black)', marginBottom: '1rem' }}>Why CivicPulse?</h2>
+            <h2 className="text-h2" style={{ color: 'var(--near-black)', marginBottom: '1rem' }}>Why Citizen Vox?</h2>
             <p className="text-body text-muted" style={{ fontSize: '1.125rem' }}>Built for transparency. Driven by community.</p>
           </div>
           

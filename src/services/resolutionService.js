@@ -29,7 +29,7 @@ export const resolutionService = {
       const verifications = await resolutionService.getVerificationsForIssue(clusterId, cycle);
       const confidenceData = resolutionConfidenceService.calculateConfidence(verifications);
       
-      const docRef = doc(db, 'issueClusters', clusterId);
+      const docRef = doc(db, 'issues', clusterId);
       await updateDoc(docRef, {
         resolutionConfidence: confidenceData,
         updatedAt: serverTimestamp()
@@ -64,10 +64,10 @@ export const resolutionService = {
         createdAt: serverTimestamp()
       });
 
-      // Update cluster status to Verified Resolved
-      const docRef = doc(db, 'issueClusters', clusterId);
+      // Update issue status to Verified Resolved
+      const docRef = doc(db, 'issues', clusterId);
       await updateDoc(docRef, {
-        currentStatus: 'Verified Resolved',
+        status: 'Verified Resolved',
         verifiedAt: serverTimestamp(),
         updatedAt: serverTimestamp()
       });
@@ -112,15 +112,25 @@ export const resolutionService = {
         createdAt: serverTimestamp()
       });
 
-      // Update cluster status back to Reopened
+      // Update issue status back to Reopened
       // We also increment the verification cycle so the NEXT time it's completed, it gets fresh verifications.
-      const docRef = doc(db, 'issueClusters', clusterId);
+      const docRef = doc(db, 'issues', clusterId);
+      const { increment } = await import('firebase/firestore');
+      
       await updateDoc(docRef, {
-        currentStatus: 'Reopened',
+        status: 'Reopened',
         reopenedAt: serverTimestamp(),
+        reopenedCount: increment(1),
         verificationCycle: (currentCycle || 1) + 1,
         updatedAt: serverTimestamp()
       });
+
+      // Record in Civic Memory for tracking recurrences
+      const { civicMemoryService } = await import('./civicMemoryService');
+      const issueSnap = await getDoc(docRef);
+      if (issueSnap.exists()) {
+        await civicMemoryService.recordRecurrence(clusterId, clusterId, clusterId, issueSnap.data());
+      }
 
       // Update Timeline
       const { taskService } = await import('./taskService');

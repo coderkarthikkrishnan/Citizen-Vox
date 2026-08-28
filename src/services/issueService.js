@@ -212,14 +212,20 @@ export const issueService = {
       const newEndorsements = [...(issue.endorsements || []), userId];
       let newStatus = issue.status;
 
+      // Slight bump to confidence score per vote
+      const currentConfidence = issue.confidenceScore || 50;
+      const newConfidence = Math.min(100, currentConfidence + 5);
+
       // Auto-verify if it hits threshold (3)
-      if (newEndorsements.length >= 3 && (issue.status === 'reported' || issue.status === 'under_review')) {
-        newStatus = 'community_verified';
+      if (newEndorsements.length >= 3 && (issue.status === 'reported' || issue.status === 'under_review' || issue.status === 'submitted')) {
+        newStatus = 'Under Review';
       }
 
       await updateDoc(issueRef, {
         endorsements: arrayUnion(userId),
         verificationCount: newEndorsements.length,
+        confidenceScore: newConfidence,
+        reportCount: (issue.reportCount || 1) + 1,
         status: newStatus,
         updatedAt: serverTimestamp()
       });

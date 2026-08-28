@@ -1,6 +1,6 @@
 export const ta = {
   // General
-  "app.title": "CivicPulse",
+  "app.title": "Citizen Vox",
   "app.tagline": "நிகழ்நேர குடிமைப் பிரச்சினை அறிக்கை",
 
   // Report Flow
@@ -69,7 +69,7 @@ export const ta = {
   "dash.loading": "ஏற்றுகிறது...",
   "dash.noIssues": "செயலில் உள்ள பிரச்சினைகள் இல்லை",
   "dash.noIssuesDesc": "நீங்கள் சமீபத்தில் எதையும் புகாரளிக்கவில்லை.",
-  "dash.mapTitle": "CivicPulse வரைபடம்",
+  "dash.mapTitle": "Citizen Vox வரைபடம்",
   "dash.mapDesc": "உங்கள் அருகிலுள்ள சரிபார்க்கப்பட்ட பிரச்சினைகளை பார்க்கவும்.",
   "dash.exploreMap": "வரைபடத்தை ஆராயுங்கள்",
 
