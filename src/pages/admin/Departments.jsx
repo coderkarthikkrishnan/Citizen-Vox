@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../firebase/config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { Truck, Trash2, Droplet, Waves, Zap, Users, Clock, AlertCircle, X } from 'lucide-react';
+import { Truck, Trash2, Droplet, Waves, Zap, Users, Clock, AlertCircle, X, CheckCircle, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CORE_DEPARTMENTS = [
@@ -186,32 +186,141 @@ const Departments = () => {
                     <p className="text-muted">No field workers registered for {selectedDept.name}.</p>
                   </div>
                 ) : (
-                  workers.map(worker => (
-                    <div key={worker.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border)', borderRadius: 'var(--radius-md)', padding: '1rem' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
-                        <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--bg-main)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold' }}>
-                          {worker.name?.charAt(0).toUpperCase() || 'W'}
+                  workers.map((worker, index) => (
+                    <motion.div 
+                      key={worker.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      whileHover={{ scale: 1.01, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
+                      style={{ 
+                        background: 'var(--surface)', 
+                        border: '1px solid var(--border)', 
+                        borderRadius: '16px', 
+                        padding: '1.25rem',
+                        position: 'relative',
+                        overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1.25rem',
+                        boxShadow: 'var(--shadow-sm)'
+                      }}
+                    >
+                      {/* Premium Accent Glow */}
+                      <div style={{
+                        position: 'absolute',
+                        top: 0,
+                        right: 0,
+                        width: '120px',
+                        height: '120px',
+                        background: worker.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)',
+                        opacity: 0.1,
+                        filter: 'blur(40px)',
+                        borderRadius: '50%',
+                        transform: 'translate(30%, -30%)',
+                        pointerEvents: 'none'
+                      }} />
+                      
+                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                          <div style={{ 
+                            width: '48px', 
+                            height: '48px', 
+                            borderRadius: '14px', 
+                            flexShrink: 0,
+                            background: worker.status === 'inactive' ? 'var(--bg-main)' : 'linear-gradient(135deg, var(--primary-green), var(--accent))', 
+                            color: worker.status === 'inactive' ? 'var(--text-secondary)' : 'var(--near-black)',
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            justifyContent: 'center', 
+                            fontWeight: '700',
+                            fontSize: '1.25rem',
+                            border: worker.status === 'inactive' ? '1px solid var(--border)' : 'none',
+                            boxShadow: worker.status === 'inactive' ? 'none' : '0 4px 12px rgba(0,255,157, 0.25)'
+                          }}>
+                            {worker.name?.charAt(0).toUpperCase() || 'W'}
+                          </div>
+                          <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                            <h3 style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {worker.name}
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                              {worker.email}
+                            </p>
+                          </div>
                         </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <h4 style={{ fontWeight: 600, fontSize: '1rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{worker.name}</h4>
-                          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{worker.email}</p>
-                        </div>
-                        <div style={{ padding: '0.25rem 0.75rem', borderRadius: '1rem', background: worker.status === 'inactive' ? 'rgba(255,85,85,0.1)' : 'rgba(0,255,157,0.1)', color: worker.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)', fontSize: '0.75rem', fontWeight: 600 }}>
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                        <div style={{ 
+                          padding: '0.35rem 0.85rem', 
+                          borderRadius: '20px', 
+                          background: worker.status === 'inactive' ? 'rgba(255,85,85,0.1)' : 'rgba(0,255,157,0.1)', 
+                          color: worker.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)', 
+                          fontSize: '0.75rem', 
+                          fontWeight: 700,
+                          letterSpacing: '0.5px',
+                          border: `1px solid ${worker.status === 'inactive' ? 'rgba(255,85,85,0.2)' : 'rgba(0,255,157,0.2)'}`,
+                          display: 'inline-block'
+                        }}>
                           {worker.status === 'inactive' ? 'INACTIVE' : 'AVAILABLE'}
                         </div>
                       </div>
                       
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', padding: '0.75rem', background: 'var(--bg-main)', borderRadius: 'var(--radius-sm)' }}>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <span style={{ fontSize: '1.25rem', fontWeight: 'bold' }}>{worker.activeTasks || 0}</span>
-                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Active Tasks</span>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: '1fr 1fr', 
+                        gap: '0.75rem', 
+                        position: 'relative', 
+                        zIndex: 1 
+                      }}>
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          gap: '0.75rem', 
+                          padding: '1rem', 
+                          background: 'var(--bg-main)', 
+                          border: '1px solid var(--border)',
+                          borderRadius: '12px' 
+                        }}>
+                          <div style={{ background: 'rgba(20,20,20,0.05)', padding: '0.5rem', borderRadius: '8px', color: 'var(--primary)', display: 'flex' }}>
+                            <Briefcase size={18} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
+                              {worker.activeTasks || 0}
+                            </div>
+                            <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.5px', fontWeight: 600 }}>
+                              Active Tasks
+                            </div>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                          <span style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--success)' }}>{worker.completedTasks || 0}</span>
-                          <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)' }}>Completed</span>
+                        
+                        <div style={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          justifyContent: 'center',
+                          gap: '0.75rem', 
+                          padding: '1rem', 
+                          background: 'var(--bg-main)', 
+                          border: '1px solid var(--border)',
+                          borderRadius: '12px' 
+                        }}>
+                          <div style={{ background: 'rgba(0,255,157,0.1)', padding: '0.5rem', borderRadius: '8px', color: 'var(--primary-green)', display: 'flex' }}>
+                            <CheckCircle size={18} />
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                            <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
+                              {worker.completedTasks || 0}
+                            </div>
+                            <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.5px', fontWeight: 600 }}>
+                              Completed
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ))
                 )}
               </div>

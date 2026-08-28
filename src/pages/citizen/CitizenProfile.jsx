@@ -321,8 +321,8 @@ const CitizenProfile = () => {
                     background: lbUser.id === user?.uid ? 'rgba(143,234,99,0.05)' : 'transparent',
                     borderRadius: '8px'
                   }}>
-                    <div style={{ width: '40px', fontWeight: 700, color: index < 3 ? 'var(--warning)' : 'var(--text-secondary)' }}>
-                      #{index + 1}
+                    <div style={{ width: '40px', fontWeight: 700, color: lbUser.rank <= 3 ? 'var(--warning)' : 'var(--text-secondary)' }}>
+                      #{lbUser.rank}
                     </div>
                     <div style={{ 
                       width: '32px', height: '32px', 

@@ -40,11 +40,20 @@ const CivicMap = () => {
   }, []);
 
   useEffect(() => {
-    // Fetch initial issues
-    issueService.getNearbyIssues().then(data => {
-      setIssues(data.filter(i => i.latitude && i.longitude));
+    // Subscribe to real-time issues for live endorsement updates
+    const unsubscribe = issueService.subscribeToAllIssues((data) => {
+      const validAndNormalized = data
+        .filter(i => (i.latitude && i.longitude) || (i.location?.lat && i.location?.lng))
+        .map(i => ({
+          ...i,
+          latitude: i.latitude || i.location?.lat,
+          longitude: i.longitude || i.location?.lng
+        }));
+      setIssues(validAndNormalized);
       setLoading(false);
     });
+    
+    return () => unsubscribe();
   }, []);
 
   const handleIssueClick = (id) => {

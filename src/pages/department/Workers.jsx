@@ -66,62 +66,158 @@ const Workers = () => {
           {workers.map((w, index) => (
             <motion.div 
               key={w.id}
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5, boxShadow: '0 10px 30px rgba(0, 255, 157, 0.1)' }}
+              transition={{ delay: index * 0.05 }}
+              whileHover={{ scale: 1.01, boxShadow: '0 12px 40px rgba(0,0,0,0.08)' }}
               style={{ 
-                background: 'linear-gradient(145deg, var(--surface) 0%, rgba(20,20,20,0.6) 100%)',
-                padding: '1.5rem', 
-                borderRadius: 'var(--radius-lg)', 
-                border: '1px solid rgba(255,255,255,0.1)',
-                display: 'flex', 
+                background: 'var(--surface)', 
+                border: '1px solid var(--border)', 
+                borderRadius: '16px', 
+                padding: '1.25rem',
+                position: 'relative',
+                overflow: 'hidden',
+                display: 'flex',
                 flexDirection: 'column',
-                gap: '1.5rem',
-                backdropFilter: 'blur(10px)',
-                transition: 'all 0.3s ease'
+                gap: '1.25rem',
+                boxShadow: 'var(--shadow-sm)'
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--primary-green)', color: 'var(--near-black)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem', fontWeight: 'bold' }}>
-                    {w.name.charAt(0).toUpperCase()}
+              {/* Premium Accent Glow */}
+              <div style={{
+                position: 'absolute',
+                top: 0,
+                right: 0,
+                width: '120px',
+                height: '120px',
+                background: w.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)',
+                opacity: 0.1,
+                filter: 'blur(40px)',
+                borderRadius: '50%',
+                transform: 'translate(30%, -30%)',
+                pointerEvents: 'none'
+              }} />
+              
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', position: 'relative', zIndex: 1 }}>
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flex: 1, minWidth: 0 }}>
+                  <div style={{ 
+                    width: '48px', 
+                    height: '48px', 
+                    borderRadius: '14px', 
+                    flexShrink: 0,
+                    background: w.status === 'inactive' ? 'var(--bg-main)' : 'linear-gradient(135deg, var(--primary-green), var(--accent))', 
+                    color: w.status === 'inactive' ? 'var(--text-secondary)' : 'var(--near-black)',
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    fontWeight: '700',
+                    fontSize: '1.25rem',
+                    border: w.status === 'inactive' ? '1px solid var(--border)' : 'none',
+                    boxShadow: w.status === 'inactive' ? 'none' : '0 4px 12px rgba(0,255,157, 0.25)'
+                  }}>
+                    {w.name?.charAt(0).toUpperCase() || 'W'}
                   </div>
-                  <div>
-                    <h3 className="text-h3" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
+                  <div style={{ minWidth: 0, overflow: 'hidden' }}>
+                    <h3 style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--text-primary)', margin: '0 0 4px 0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {w.name}
                     </h3>
-                    <p className="text-small text-muted">{w.email}</p>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {w.email}
+                    </p>
                   </div>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button onClick={() => { setEditingWorker(w); setIsModalOpen(true); }} style={{ padding: '0.5rem', background: 'rgba(255,255,255,0.05)', border: 'none', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-primary)', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}>
+                
+                <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                  <button 
+                    onClick={() => { setEditingWorker(w); setIsModalOpen(true); }} 
+                    style={{ padding: '0.5rem', background: 'var(--bg-main)', border: '1px solid var(--border)', borderRadius: '50%', cursor: 'pointer', color: 'var(--text-secondary)', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                    onMouseOver={e => { e.currentTarget.style.background = 'var(--surface-hover)'; e.currentTarget.style.color = 'var(--primary)'; }} 
+                    onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-main)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                    title="Edit Worker"
+                  >
                     <Edit2 size={16} />
                   </button>
                   {w.status !== 'inactive' && (
-                    <button onClick={() => handleDeactivate(w)} style={{ padding: '0.5rem', background: 'rgba(255,85,85,0.1)', color: 'var(--danger)', border: 'none', borderRadius: '50%', cursor: 'pointer', transition: 'background 0.2s' }} onMouseOver={e => e.currentTarget.style.background = 'rgba(255,85,85,0.2)'} onMouseOut={e => e.currentTarget.style.background = 'rgba(255,85,85,0.1)'}>
+                    <button 
+                      onClick={() => handleDeactivate(w)} 
+                      style={{ padding: '0.5rem', background: 'var(--bg-main)', border: '1px solid var(--border)', color: 'var(--danger)', borderRadius: '50%', cursor: 'pointer', transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center' }} 
+                      onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,85,85,0.1)'; e.currentTarget.style.borderColor = 'var(--danger)'; }} 
+                      onMouseOut={e => { e.currentTarget.style.background = 'var(--bg-main)'; e.currentTarget.style.borderColor = 'var(--border)'; }}
+                      title="Deactivate Worker"
+                    >
                       <UserX size={16} />
                     </button>
                   )}
                 </div>
               </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start' }}>
+                <div style={{ 
+                  padding: '0.35rem 0.85rem', 
+                  borderRadius: '20px', 
+                  background: w.status === 'inactive' ? 'rgba(255,85,85,0.1)' : 'rgba(0,255,157,0.1)', 
+                  color: w.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)', 
+                  fontSize: '0.75rem', 
+                  fontWeight: 700,
+                  letterSpacing: '0.5px',
+                  border: `1px solid ${w.status === 'inactive' ? 'rgba(255,85,85,0.2)' : 'rgba(0,255,157,0.2)'}`,
+                  display: 'inline-block'
+                }}>
+                  {w.status === 'inactive' ? 'INACTIVE' : 'AVAILABLE'}
+                </div>
+              </div>
               
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: 'var(--radius-md)' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{w.activeTasks}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Active Tasks</span>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: '1fr 1fr', 
+                gap: '0.75rem', 
+                position: 'relative', 
+                zIndex: 1 
+              }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: '0.75rem', 
+                  padding: '1rem', 
+                  background: 'var(--bg-main)', 
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px' 
+                }}>
+                  <div style={{ background: 'rgba(20,20,20,0.05)', padding: '0.5rem', borderRadius: '8px', color: 'var(--primary)', display: 'flex' }}>
+                    <Activity size={18} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
+                      {w.activeTasks || 0}
+                    </div>
+                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.5px', fontWeight: 600 }}>
+                      Active Tasks
+                    </div>
+                  </div>
                 </div>
-                <div style={{ width: '1px', height: '30px', background: 'var(--border)' }}></div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--success)' }}>{w.completedTasks}</span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Completed</span>
-                </div>
-                <div style={{ width: '1px', height: '30px', background: 'var(--border)' }}></div>
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  <span style={{ fontSize: '0.875rem', fontWeight: 'bold', color: w.status === 'inactive' ? 'var(--danger)' : 'var(--primary-green)' }}>
-                    {w.status === 'inactive' ? 'INACTIVE' : 'ACTIVE'}
-                  </span>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</span>
+                
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  gap: '0.75rem', 
+                  padding: '1rem', 
+                  background: 'var(--bg-main)', 
+                  border: '1px solid var(--border)',
+                  borderRadius: '12px' 
+                }}>
+                  <div style={{ background: 'rgba(0,255,157,0.1)', padding: '0.5rem', borderRadius: '8px', color: 'var(--primary-green)', display: 'flex' }}>
+                    <CheckCircle size={18} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                    <div style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--text-primary)', lineHeight: 1 }}>
+                      {w.completedTasks || 0}
+                    </div>
+                    <div style={{ fontSize: '0.65rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginTop: '4px', letterSpacing: '0.5px', fontWeight: 600 }}>
+                      Completed
+                    </div>
+                  </div>
                 </div>
               </div>
             </motion.div>

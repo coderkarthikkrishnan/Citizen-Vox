@@ -1,15 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { Navigation } from 'lucide-react';
 import IssueStatus from '../citizen/IssueStatus';
 import { getSeverity } from '../../hooks/useMapIssues';
+import { useAuth } from '../../hooks/useAuth';
+import { issueService } from '../../services/issueService';
 import './MapStyles.css';
+
+const IssueActionButtons = ({ issue }) => {
+  const { user } = useAuth();
+  const [endorsing, setEndorsing] = useState(false);
+  const [alreadyEndorsed, setAlreadyEndorsed] = useState(false);
+
+  useEffect(() => {
+    if (user && issue.id) {
+      issueService.checkEndorsement(issue.id, user.uid).then(setAlreadyEndorsed);
+    }
+  }, [issue.id, user]);
+
+  const handleEndorse = async (e) => {
+    e.stopPropagation();
+    if (!user) {
+      alert("Sign in to confirm this issue.");
+      return;
+    }
+    setEndorsing(true);
+    const success = await issueService.endorseIssue(issue.id, user.uid);
+    if (success) {
+      setAlreadyEndorsed(true);
+    } else {
+      alert("Failed to endorse. You may have already endorsed this issue.");
+    }
+    setEndorsing(false);
+  };
+
+  return (
+    <div style={{ display: 'flex', gap: '6px', marginTop: '12px' }} onClick={(e) => e.stopPropagation()}>
+      <Link to={`/citizen/issues/${issue.id}`} className="preview-btn preview-btn-primary" style={{ flex: 1, padding: '0.4rem', fontSize: '0.8rem' }}>
+        View
+      </Link>
+      <button 
+        className="preview-btn preview-btn-secondary"
+        onClick={handleEndorse}
+        disabled={endorsing || alreadyEndorsed}
+        style={{ 
+          flex: 1.5, 
+          padding: '0.4rem', 
+          fontSize: '0.8rem',
+          cursor: (endorsing || alreadyEndorsed) ? 'not-allowed' : 'pointer',
+          background: alreadyEndorsed ? 'var(--success-light)' : undefined,
+          color: alreadyEndorsed ? 'var(--success-dark)' : undefined,
+          border: alreadyEndorsed ? '1px solid var(--success-dark)' : undefined,
+        }}
+      >
+        {endorsing ? 'Working...' : alreadyEndorsed ? '✓ Endorsed' : 'Endorse'}
+      </button>
+      <button 
+        className="preview-btn preview-btn-secondary"
+        style={{ padding: '0.4rem 0.6rem', flex: '0 0 auto' }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (issue.latitude && issue.longitude) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${issue.latitude},${issue.longitude}`, '_blank');
+          }
+        }}
+        title="Get Directions"
+      >
+        <Navigation size={14} />
+      </button>
+    </div>
+  );
+};
 
 const NearbyIssueList = ({ issues, isMobile, activeIssueId, onIssueHover, onIssueClick }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Split-pane on desktop, draggable bottom sheet on mobile.
-  // For MVP, we'll use a simple CSS class toggle for mobile bottom sheet.
-  
   const handleToggle = () => {
     if (isMobile) setIsExpanded(!isExpanded);
   };
@@ -91,6 +157,8 @@ const NearbyIssueList = ({ issues, isMobile, activeIssueId, onIssueHover, onIssu
                   {getSeverity(issue)}
                 </span>
               </div>
+              
+              <IssueActionButtons issue={issue} />
             </motion.div>
           ))
         )}

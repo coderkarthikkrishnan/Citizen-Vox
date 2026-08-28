@@ -13,7 +13,9 @@ import {
   onSnapshot,
   updateDoc,
   arrayUnion,
-  deleteDoc
+  deleteDoc,
+  setDoc,
+  increment
 } from 'firebase/firestore';
 import { gamificationService } from './gamificationService';
 import { clusterService } from './clusterService';
@@ -46,7 +48,10 @@ export const issueService = {
       priorityScore: null,
       confidenceScore: null,
       inputMethod: issueData.inputMethod || 'text',
-      language: issueData.language || 'en-IN'
+      language: issueData.language || 'en-IN',
+      municipalityId: null,
+      departmentId: null,
+      assignedWorkerId: null
     };
 
     let docRef;
@@ -173,62 +178,130 @@ export const issueService = {
     }
   },
 
-  /**
-   * Subscribe to all issues for real-time dashboard updates
-   */
   subscribeToAllIssues: (callback) => {
     if (!db) return () => {};
     
-    const q = query(
-      collection(db, 'issues'),
-      orderBy('createdAt', 'desc')
-    );
+    // Do not use orderBy('createdAt') here, because Firestore will silently drop
+    // any mock documents that are missing the 'createdAt' field.
+    const q1 = query(collection(db, 'issues'), limit(200));
+    const q2 = query(collection(db, 'issueClusters'), limit(200));
     
-    return onSnapshot(q, (snapshot) => {
-      const issues = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      callback(issues);
-    }, (error) => {
-      console.error("Error subscribing to issues:", error);
-    });
+    let issuesData = [];
+    let clustersData = [];
+
+    const emit = () => {
+      // Merge and deduplicate by ID just in case
+      const merged = [...issuesData, ...clustersData];
+      const unique = Array.from(new Map(merged.map(item => [item.id, item])).values());
+      
+      // Sort by createdAt desc in memory
+      unique.sort((a, b) => {
+        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return timeB - timeA;
+      });
+      callback(unique);
+    };
+
+    const unsub1 = onSnapshot(q1, (snapshot) => {
+      issuesData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      emit();
+    }, (error) => console.error("Error subscribing to issues:", error));
+
+    const unsub2 = onSnapshot(q2, (snapshot) => {
+      clustersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isCluster: true }));
+      emit();
+    }, (error) => console.error("Error subscribing to issueClusters:", error));
+    
+    return () => {
+      unsub1();
+      unsub2();
+    };
   },
 
   /**
-   * Endorse (Verify) an issue by a nearby user
+   * Check if a user has already endorsed an issue
+   */
+  checkEndorsement: async (issueId, userId) => {
+    if (!db || !userId || !issueId) return false;
+    try {
+      let endorseRef = doc(db, 'issues', issueId, 'endorsements', userId);
+      let snap = await getDoc(endorseRef);
+      if (snap.exists()) return true;
+
+      endorseRef = doc(db, 'issueClusters', issueId, 'endorsements', userId);
+      snap = await getDoc(endorseRef);
+      return snap.exists();
+    } catch (e) {
+      if (e.code === 'permission-denied') {
+        console.warn("Firebase Rules blocked endorsement check. Please update firestore.rules in your Firebase Console.");
+      } else {
+        console.error("Error checking endorsement:", e);
+      }
+      return false;
+    }
+  },
+
+  /**
+   * Endorse (Verify) an issue by a citizen using a secure subcollection
    */
   endorseIssue: async (issueId, userId) => {
-    if (!db) return false;
+    if (!db || !userId || !issueId) return false;
     try {
-      const issueRef = doc(db, 'issues', issueId);
-      const issueSnap = await getDoc(issueRef);
+      let collectionName = 'issues';
+      let issueRef = doc(db, collectionName, issueId);
+      let issueSnap = await getDoc(issueRef);
       
-      if (!issueSnap.exists()) return false;
+      // Fallback to issueClusters for mock data
+      if (!issueSnap.exists()) {
+        collectionName = 'issueClusters';
+        issueRef = doc(db, collectionName, issueId);
+        issueSnap = await getDoc(issueRef);
+        
+        if (!issueSnap.exists()) return false;
+      }
+
+      const endorseRef = doc(db, collectionName, issueId, 'endorsements', userId);
+      const endorseSnap = await getDoc(endorseRef);
+      
       const issue = issueSnap.data();
       
       // Prevent self-endorsement or double endorsement
-      if (issue.reportedBy === userId || (issue.endorsements && issue.endorsements.includes(userId))) {
+      if (issue.reportedBy === userId || endorseSnap.exists()) {
         return false;
       }
 
-      const newEndorsements = [...(issue.endorsements || []), userId];
-      let newStatus = issue.status;
-
-      // Slight bump to confidence score per vote
-      const currentConfidence = issue.confidenceScore || 50;
-      const newConfidence = Math.min(100, currentConfidence + 5);
-
-      // Auto-verify if it hits threshold (3)
-      if (newEndorsements.length >= 3 && (issue.status === 'reported' || issue.status === 'under_review' || issue.status === 'submitted')) {
+      // Calculate auto-verify threshold
+      const currentVerifications = issue.verificationCount || (issue.endorsements?.length || 0);
+      let newStatus = issue.status || issue.currentStatus; // issueClusters uses currentStatus sometimes
+      
+      if (currentVerifications + 1 >= 3 && (newStatus === 'reported' || newStatus === 'under_review' || newStatus === 'submitted')) {
         newStatus = 'Under Review';
       }
 
-      await updateDoc(issueRef, {
-        endorsements: arrayUnion(userId),
-        verificationCount: newEndorsements.length,
-        confidenceScore: newConfidence,
-        reportCount: (issue.reportCount || 1) + 1,
-        status: newStatus,
-        updatedAt: serverTimestamp()
+      // Write subcollection doc
+      await setDoc(endorseRef, {
+        userId: userId,
+        createdAt: serverTimestamp()
       });
+
+      // Atomically increment counts on parent issue
+      const updates = {
+        verificationCount: increment(1),
+        reportCount: increment(1),
+        confidenceScore: increment(5),
+        updatedAt: serverTimestamp()
+      };
+      
+      if (newStatus !== (issue.status || issue.currentStatus)) {
+        if (collectionName === 'issues') {
+          updates.status = newStatus;
+        } else {
+          updates.currentStatus = newStatus;
+        }
+      }
+
+      await updateDoc(issueRef, updates);
 
       // Award XP to the endorser
       await gamificationService.addXp(userId, 10);

@@ -57,7 +57,9 @@ export const useMapIssues = (issues, filters, userLocation) => {
     // Distance Calculation and Filtering
     if (userLocation) {
       result = result.map(issue => {
-        const dist = calculateDistance(userLocation.lat, userLocation.lng, issue.latitude, issue.longitude);
+        const lat = issue.latitude || issue.location?.lat;
+        const lng = issue.longitude || issue.location?.lng;
+        const dist = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
         return { ...issue, distance: dist };
       });
 

@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
-import { AlertTriangle, ChevronDown, ChevronUp, Info, Activity } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp, Info, Activity, Edit2 } from 'lucide-react';
 import { PRIORITY_CONFIG } from '../../config/priorityConfig';
 import Button from '../common/Button';
+import { db } from '../../firebase/config';
+import { doc, updateDoc } from 'firebase/firestore';
 
-const PriorityCard = ({ priority, onRefresh, loading }) => {
+const PriorityCard = ({ priority, onRefresh, loading, issue, onUpdate }) => {
   const [showDetails, setShowDetails] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [updating, setUpdating] = useState(false);
 
   if (!priority) return null;
 
@@ -28,6 +32,38 @@ const PriorityCard = ({ priority, onRefresh, loading }) => {
     bg = 'rgba(16, 185, 129, 0.1)';
   }
 
+  const handlePriorityChange = async (e) => {
+    const newLevel = e.target.value;
+    if (!issue || !onUpdate || newLevel === level) {
+      setIsEditing(false);
+      return;
+    }
+    
+    setUpdating(true);
+    try {
+      const collectionName = issue.isCluster ? 'issueClusters' : 'issues';
+      const docRef = doc(db, collectionName, issue.id);
+      
+      let newScore = priority.finalScore;
+      if (newLevel === 'Critical') newScore = 95;
+      else if (newLevel === 'High') newScore = 75;
+      else if (newLevel === 'Medium') newScore = 50;
+      else if (newLevel === 'Low') newScore = 20;
+
+      await updateDoc(docRef, {
+        'priority.level': newLevel,
+        'priority.finalScore': newScore,
+        'priority.aiContext': `Manually overridden to ${newLevel} by Authority`
+      });
+      setIsEditing(false);
+      onUpdate();
+    } catch (err) {
+      console.error("Failed to update priority", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
   return (
     <div style={{ 
       background: 'var(--surface)', 
@@ -44,13 +80,46 @@ const PriorityCard = ({ priority, onRefresh, loading }) => {
             <Activity size={16} /> CIVIC PRIORITY
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: '12px' }}>
-            <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800', color: 'var(--text-primary)' }}>{level.toUpperCase()}</h2>
+            {isEditing ? (
+              <select 
+                value={level} 
+                onChange={handlePriorityChange} 
+                disabled={updating}
+                style={{
+                  fontSize: '1.25rem',
+                  fontWeight: '800',
+                  padding: '0.25rem 0.5rem',
+                  borderRadius: 'var(--radius-sm)',
+                  border: `1px solid ${color}`,
+                  background: 'var(--surface)',
+                  color: 'var(--text-primary)',
+                  cursor: updating ? 'wait' : 'pointer'
+                }}
+              >
+                <option value="Critical">CRITICAL</option>
+                <option value="High">HIGH</option>
+                <option value="Medium">MEDIUM</option>
+                <option value="Low">LOW</option>
+              </select>
+            ) : (
+              <h2 style={{ margin: 0, fontSize: '2rem', fontWeight: '800', color: 'var(--text-primary)' }}>{level.toUpperCase()}</h2>
+            )}
             <span style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-secondary)' }}>{finalScore} <span style={{ fontSize: '0.875rem', fontWeight: 'normal' }}>/ 100</span></span>
+            
+            {!isEditing && issue && onUpdate && (
+              <button 
+                onClick={() => setIsEditing(true)}
+                style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', display: 'flex', padding: '4px' }}
+                title="Override Priority"
+              >
+                <Edit2 size={16} />
+              </button>
+            )}
           </div>
         </div>
         
         {onRefresh && (
-          <Button variant="outline" size="small" onClick={onRefresh} disabled={loading} style={{ background: 'white' }}>
+          <Button variant="outline" size="small" onClick={onRefresh} disabled={loading || updating} style={{ background: 'white' }}>
             {loading ? 'Analyzing...' : 'Refresh AI Priority'}
           </Button>
         )}

@@ -74,7 +74,7 @@ const AuthorityIssueDetails = () => {
 
           {/* Intelligence Layer */}
           {issue.priority && (
-            <PriorityCard priority={issue.priority} />
+            <PriorityCard priority={issue.priority} issue={issue} onUpdate={fetchIssue} />
           )}
 
           {/* Resolution Verification UI */}

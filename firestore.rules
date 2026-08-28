@@ -68,14 +68,22 @@ service cloud.firestore {
 
       // Admin (scoped), the original reporter, OR assigned worker can update
       allow update: if
-        hasAdminMuniAccess(resource.data.municipalityId) ||
-        request.auth.uid == resource.data.reportedBy ||
-        (isWorker() && resource.data.assignedWorkerId == request.auth.uid);
+        hasAdminMuniAccess(resource.data.get('municipalityId', null)) ||
+        request.auth.uid == resource.data.get('reportedBy', null) ||
+        (isWorker() && resource.data.get('assignedWorkerId', null) == request.auth.uid) ||
+        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['endorsements', 'verificationCount', 'confidenceScore', 'reportCount', 'status', 'updatedAt'])); // allow updates from endorsement transactions
 
       // Only admin or reporter can delete
       allow delete: if
-        hasAdminMuniAccess(resource.data.municipalityId) ||
-        request.auth.uid == resource.data.reportedBy;
+        hasAdminMuniAccess(resource.data.get('municipalityId', null)) ||
+        request.auth.uid == resource.data.get('reportedBy', null);
+
+      // ─── Endorsements Subcollection ───
+      match /endorsements/{userId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isAuthenticated() && request.auth.uid == userId;
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     // ─── Tasks Collection ─────────────────────────────────────────────────
@@ -99,9 +107,17 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isAuthenticated();
       allow update: if isAdmin() ||
-        (isWorker() && resource.data.assignedWorker == request.auth.uid) ||
-        (isWorker() && resource.data.acceptedBy == request.auth.uid);
+        (isWorker() && resource.data.get('assignedWorker', null) == request.auth.uid) ||
+        (isWorker() && resource.data.get('acceptedBy', null) == request.auth.uid) ||
+        (isAuthenticated() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['endorsements', 'verificationCount', 'confidenceScore', 'reportCount', 'currentStatus', 'updatedAt']));
       allow delete: if isAdmin();
+
+      // ─── Endorsements Subcollection ───
+      match /endorsements/{userId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isAuthenticated() && request.auth.uid == userId;
+        allow delete: if isAuthenticated() && request.auth.uid == userId;
+      }
     }
 
     // ─── Status History ───────────────────────────────────────────────────

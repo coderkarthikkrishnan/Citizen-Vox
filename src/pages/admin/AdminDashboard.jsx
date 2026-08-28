@@ -19,22 +19,22 @@ const AdminDashboard = () => {
       try {
         if (!user) return;
         
-        // Fetch 1: Standard Analytics
+        // Import analyticsService dynamically
         const { analyticsService } = await import('../../services/analyticsService');
-        const analyticsData = await analyticsService.getAdminDashboardMetrics(
-          user.municipalityId, 
-          user.departmentId
-        );
         
-        // Fetch 2: Integrity Stats
-        const [totalUsersSnap, flaggedSnap] = await Promise.all([
+        // Execute all heavy fetches concurrently
+        const [
+          analyticsData,
+          totalUsersSnap,
+          flaggedSnap,
+          durabilityData
+        ] = await Promise.all([
+          analyticsService.getAdminDashboardMetrics(user.municipalityId, user.departmentId),
           getCountFromServer(collection(db, 'users')),
-          getCountFromServer(query(collection(db, 'integrity_reports'), where('resolved', '==', false)))
+          getCountFromServer(query(collection(db, 'integrity_reports'), where('resolved', '==', false))),
+          resolutionDurabilityService.getDurabilityMetrics(user)
         ]);
         
-        // Fetch 3: Resolution Durability
-        const durabilityData = await resolutionDurabilityService.getDurabilityMetrics(user);
-
         setMetrics(analyticsData);
         setIntegrityStats({
           totalUsers: totalUsersSnap.data().count,

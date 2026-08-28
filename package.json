@@ -8,7 +8,8 @@
     "dev:worker": "cd cloudflare-worker && npx wrangler dev",
     "build": "vite build",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && npx firebase-tools deploy"
   },
   "dependencies": {
     "firebase": "^12.18.0",

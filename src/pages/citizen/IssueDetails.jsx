@@ -16,6 +16,7 @@ const IssueDetails = () => {
 
   const { user } = useAuth();
   const [endorsing, setEndorsing] = useState(false);
+  const [alreadyEndorsed, setAlreadyEndorsed] = useState(false);
 
   useEffect(() => {
     const fetchIssue = async () => {
@@ -24,6 +25,10 @@ const IssueDetails = () => {
         const historyData = await taskService.getHistory(id);
         setIssue(data);
         setHistory(historyData);
+        if (user && data) {
+          const isEndorsed = await issueService.checkEndorsement(id, user.uid);
+          setAlreadyEndorsed(isEndorsed);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -31,12 +36,12 @@ const IssueDetails = () => {
       }
     };
     fetchIssue();
-  }, [id]);
+  }, [id, user]);
 
   if (loading) return <div style={{ padding: '2rem', textAlign: 'center' }}>Loading...</div>;
   if (!issue) return <div style={{ padding: '2rem', textAlign: 'center' }}>Issue not found</div>;
 
-  const confidence = issue.confidenceScore || (issue.endorsements ? Math.min(100, 50 + (issue.endorsements.length * 5)) : 50);
+  const confidence = issue.confidenceScore || 50;
   const priority = issue.priority?.level || 'Medium';
   const isCritical = priority.toLowerCase() === 'critical';
 
@@ -215,14 +220,15 @@ const IssueDetails = () => {
             <div style={{ maxWidth: '600px', margin: '0 auto', display: 'flex', gap: '16px' }}>
               <Button 
                 variant="primary" 
-                style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px' }}
-                disabled={endorsing || !user || issue.reportedBy === user?.uid || (issue.endorsements && issue.endorsements.includes(user?.uid))}
+                style={{ flex: 1, display: 'flex', justifyContent: 'center', gap: '8px', cursor: alreadyEndorsed ? 'not-allowed' : 'pointer' }}
+                disabled={endorsing || !user || issue.reportedBy === user?.uid || alreadyEndorsed}
                 onClick={async () => {
                   if (!user) return;
                   setEndorsing(true);
                   const success = await issueService.endorseIssue(issue.id, user.uid);
                   if (success) {
                     alert("Thanks for verifying! Your vote increased the community confidence.");
+                    setAlreadyEndorsed(true);
                     issueService.getIssueById(id).then(setIssue);
                   } else {
                     alert("You have already endorsed this issue, or you cannot endorse your own issue.");
@@ -231,7 +237,7 @@ const IssueDetails = () => {
                 }}
               >
                 <ShieldCheck size={20} />
-                {(issue.endorsements && issue.endorsements.includes(user?.uid)) ? 'Endorsed' : 'Endorse Issue'}
+                {alreadyEndorsed ? 'Endorsed' : 'Endorse Issue'}
               </Button>
             </div>
           </div>

@@ -4,9 +4,11 @@ import L from 'leaflet';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { authorityService } from '../../services/authorityService';
+import { issueService } from '../../services/issueService';
 import IssueStatus from '../../components/citizen/IssueStatus';
 import PriorityBadge from '../../components/priority/PriorityBadge';
 import 'leaflet/dist/leaflet.css';
+import '../../components/map/MapStyles.css';
 
 // Fix Leaflet icon
 delete L.Icon.Default.prototype._getIconUrl;
@@ -44,22 +46,25 @@ const AuthorityMap = () => {
   const center = { lat: 11.1271, lng: 78.6569 }; // Tamil Nadu, India
 
   useEffect(() => {
-    const fetchMapData = async () => {
-      if (!user) return;
-      try {
-        // Fetch up to 200 recent active issues for the map
-        const result = await authorityService.getPriorityQueue(user, { status: 'All' }, 200);
-        
-        // Filter out those without valid coordinates
-        const validIssues = result.issues.filter(i => (i.latitude && i.longitude) || (i.location?.lat && i.location?.lng));
-        setIssues(validIssues);
-      } catch (err) {
-        console.error("Map fetch error:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMapData();
+    if (!user) return;
+    
+    const unsubscribe = issueService.subscribeToAllIssues((data) => {
+      // Filter out those without valid coordinates
+      const validIssues = data.filter(i => (i.latitude && i.longitude) || (i.location?.lat && i.location?.lng));
+      
+      // Optionally filter by admin's department if they are not global
+      const adminFiltered = validIssues.filter(i => {
+        if (user.role !== 'admin') return true;
+        if (user.departmentId && user.departmentId !== 'All' && i.assignedDepartment !== user.departmentId) return false;
+        if (user.municipalityId && i.municipalityId !== user.municipalityId) return false;
+        return true;
+      });
+      
+      setIssues(adminFiltered);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, [user]);
 
   // Dynamically set map center based on issues if possible
@@ -110,21 +115,56 @@ const AuthorityMap = () => {
                   icon={icon}
                 >
                   <Popup className="authority-map-popup">
-                    <div style={{ padding: '0.5rem', minWidth: '200px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                        <IssueStatus status={issue.currentStatus || issue.status} />
-                        {issue.priority && <PriorityBadge level={issue.priority.level} score={issue.priority.finalScore} />}
+                    <div className="issue-preview">
+                      <div className="issue-preview-header" style={{
+                        backgroundImage: issue.media && issue.media.length > 0 ? `url(${issue.media[0].url})` : 'none',
+                        background: !(issue.media && issue.media.length > 0) ? 'linear-gradient(135deg, var(--bg-main), var(--surface-soft))' : undefined
+                      }}>
+                        {!(issue.media && issue.media.length > 0) && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+                            No Image
+                          </div>
+                        )}
                       </div>
-                      <h4 style={{ margin: '0 0 4px 0', fontSize: '0.9375rem' }}>{issue.title}</h4>
-                      <p style={{ margin: '0 0 12px 0', fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                        {issue.assignedDepartment ? `Dept: ${issue.assignedDepartment}` : 'Unassigned'}
-                      </p>
-                      <button 
-                        onClick={() => navigate(`/authority/issues/${issue.id}`)}
-                        style={{ width: '100%', padding: '0.5rem', background: 'var(--primary)', color: 'white', border: 'none', borderRadius: '4px', cursor: 'pointer', fontWeight: '500' }}
-                      >
-                        Open Operations Center
-                      </button>
+                      
+                      <div className="issue-preview-body">
+                        <div className="issue-preview-meta">
+                          <span style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: '600', color: 'var(--text-secondary)' }}>
+                            {issue.category?.replace(/_/g, ' ') || 'General'}
+                          </span>
+                        </div>
+                        
+                        <h3 className="issue-preview-title">{issue.title || 'Untitled Issue'}</h3>
+                        
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '8px', fontSize: '0.75rem', fontWeight: '500' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            Dept: {issue.assignedDepartment || 'Unassigned'}
+                          </span>
+                          {issue.confidenceScore && (
+                            <>
+                              <span style={{ color: 'var(--border)' }}>|</span>
+                              <span style={{ color: issue.confidenceScore >= 70 ? 'var(--success-dark)' : 'var(--warning-dark)' }}>
+                                {issue.confidenceScore}% Confidence
+                              </span>
+                            </>
+                          )}
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginBottom: '12px' }}>
+                          <IssueStatus status={issue.currentStatus || issue.status} />
+                          {issue.priority && <PriorityBadge level={issue.priority.level} score={issue.priority.finalScore} />}
+                        </div>
+                        
+                        <div className="issue-preview-footer">
+                          <button 
+                            onClick={() => navigate(`/admin/issues/${issue.id}`)}
+                            className="preview-btn preview-btn-primary" 
+                            style={{ width: '100%', border: 'none', cursor: 'pointer', padding: '0.75rem' }}
+                          >
+                            View Issue Details
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </Popup>
                 </Marker>

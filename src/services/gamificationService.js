@@ -83,12 +83,20 @@ export const gamificationService = {
       const querySnapshot = await getDocs(q);
       
       const leaderboard = [];
-      let rank = 1;
+      let currentRank = 1;
+      let actualPosition = 1;
+      let previousXp = null;
       
       for (const document of querySnapshot.docs) {
         const data = document.data();
+        const xp = data.xp || 0;
         let name = "Citizen";
         let avatar = "C";
+        
+        if (previousXp !== null && xp < previousXp) {
+          currentRank = actualPosition;
+        }
+        previousXp = xp;
         
         // Fetch user data for name
         try {
@@ -104,11 +112,13 @@ export const gamificationService = {
         
         leaderboard.push({
           id: document.id,
-          rank: rank++,
+          rank: currentRank,
           name,
           avatar,
-          xp: data.xp || 0
+          xp
         });
+        
+        actualPosition++;
       }
       
       return leaderboard;

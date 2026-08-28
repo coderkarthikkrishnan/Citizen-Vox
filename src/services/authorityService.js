@@ -5,9 +5,9 @@ export const authorityService = {
   /**
    * Fetches issues for the Authority Dashboard, sorted by Priority finalScore descending.
    */
-  getPriorityQueue: async (user, filters = {}, pageSize = 50, lastDoc = null) => {
+  getPriorityQueue: async (user, filters = {}, pageSize = 50) => {
     try {
-      let q = collection(db, 'issueClusters');
+      let q = collection(db, 'issues');
       let queryConstraints = [];
 
       if (user.role === 'admin') {
@@ -20,36 +20,40 @@ export const authorityService = {
       }
 
       if (filters.status && filters.status !== 'All') {
-        queryConstraints.push(where('currentStatus', '==', filters.status));
+        // Handle both status naming conventions
+        queryConstraints.push(where('status', '==', filters.status));
       }
       
       if (filters.department && filters.department !== 'All') {
         queryConstraints.push(where('assignedDepartment', '==', filters.department));
       }
 
-      // We want to sort by priority.finalScore DESC
-      // Note: Firestore requires an index for ordering on nested fields if combining with where clauses.
-      // For MVP without deploying indexes manually, we might just orderBy and do simple where.
-      queryConstraints.push(orderBy('priority.finalScore', 'desc'));
-      queryConstraints.push(limit(pageSize));
-      
-      if (lastDoc) {
-        queryConstraints.push(startAfter(lastDoc));
-      }
-
+      // Execute query without Firestore orderBy to avoid dropping documents missing the priority field
       const finalQuery = query(q, ...queryConstraints);
       const snapshot = await getDocs(finalQuery);
       
       const issues = [];
       snapshot.forEach(doc => {
         const data = doc.data();
-        
         issues.push({ id: doc.id, ...data });
       });
 
+      // Sort in memory: Priority (desc) -> Created At (desc)
+      issues.sort((a, b) => {
+        const scoreA = a.priority?.finalScore || 0;
+        const scoreB = b.priority?.finalScore || 0;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        // Fallback to creation date
+        const timeA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const timeB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return timeB - timeA;
+      });
+
       return {
-        issues,
-        lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null
+        issues: issues.slice(0, pageSize),
+        lastDoc: null // Pagination disabled for in-memory sort
       };
     } catch (error) {
       console.error("Error fetching priority queue:", error);

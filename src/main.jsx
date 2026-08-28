@@ -6,10 +6,14 @@ import App from './App.jsx'
 
 import { LanguageProvider } from './contexts/LanguageContext'
 
+import ErrorBoundary from './components/common/ErrorBoundary'
+
 createRoot(document.getElementById('root')).render(
   <StrictMode>
-    <LanguageProvider>
-      <App />
-    </LanguageProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <App />
+      </LanguageProvider>
+    </ErrorBoundary>
   </StrictMode>,
 )
